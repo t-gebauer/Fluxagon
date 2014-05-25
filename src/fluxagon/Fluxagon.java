@@ -4,6 +4,7 @@
  */
 package fluxagon;
 
+import java.awt.Font;
 import java.io.File;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -12,6 +13,8 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
+import org.newdawn.slick.Color;
+import org.newdawn.slick.TrueTypeFont;
 
 /**
  *
@@ -19,12 +22,18 @@ import static org.lwjgl.opengl.GL11.*;
  */
 interface Constants {
 
+	/** Die Breite des Fensters */
 	public static final int WINDOW_WIDTH = 600;
+	/** Die Höhe des Fensters */
 	public static final int WINDOW_HEIGHT = 600;
+	/** Der Titel des Fensters */
 	public static final String WINDOW_TITLE = "Fluxagon";
+	/** Anzahl der horizontalen Spalten */
 	public static final int COLUMN_COUNT = 10;
+	/** Anzahl der Reihen (wird irgendwie aus der Anzahl der Spalten und dem
+	 * Seitenverhältnis des Fensters berechnet) */
 	public static final int ROW_COUNT =
-			Math.round(COLUMN_COUNT * 1.0f / WINDOW_WIDTH * WINDOW_HEIGHT) + 2;
+			Math.round((COLUMN_COUNT + 4) * 1.0f / WINDOW_WIDTH * WINDOW_HEIGHT) + 2;
 	public static final float HEX_OFFSET_PERCENT = 0.75f;
 	public static final float HEX_WIDTH =
 			WINDOW_WIDTH / (COLUMN_COUNT * 2 + HEX_OFFSET_PERCENT * 4);
@@ -34,36 +43,63 @@ interface Constants {
 			HEX_OFFSET_PERCENT * HEX_WIDTH;
 	public static final float HEX_OFFSET_Y =
 			HEX_OFFSET_PERCENT * HEX_HEIGHT;
+	/** Wahrscheinlichkeit für das Entstehen einer Lane */
 	public static final float LANE_PROBABILITY = 0.4f;
+	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
+	/** Flussgeschwindigkeit */
 	public static final float FLUX_SPEED = 0.02f;
+	/** Scrollgeschwindigkeit der Map */
+	public static final double SCROLL_SPEED = 0.2;
+	/** Farbdefinition für die Hexagone */
 	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
+	/** Farbdefinition für den Hintergrund der Lanes */
 	public static final double[] COLOR_LINE_BG = {0.4, 0.4, 0.4};
+	/** Farbdefinition für den Vordergrund der Lanes */
 	public static final double[] COLOR_LINE_FG = {0, 0.8, 0.1};
-	public static final long UPDATE_TIME = 40; // Alle 40ms ein Update
+	/** Zeit zwischen zwei Update-Durchgängen */
+	public static final long UPDATE_TIME = 40;
+	/** Zeit bis zum Start des Spiels (in ms) */
+	public static final int STARTUP_TIME = 5000;
 }
 
 public class Fluxagon implements Constants {
 
+	/** frames rendered during the last second */
 	private int fps;
+	/** Anzahl der Frames dieser Sekunde */
+	private int frameCount;
 	private long lastFpsTime;
 	private long lastUpdateTime;
+	/** Boolean flag on whether are capped to 60 per second or not */
 	private boolean capFPS = true;
+	/** Boolean flag on whether Lanes are drawn or not */
 	private boolean drawLines = true;
-	private Hexagon[][] hexagons;
+	/** Boolean flag on whether AntiAliasing is enabled or not */
+	private boolean antiAlias = true;
 	private float animationOffset = 0;
-	private boolean indent_odd = false;
+	/** Boolean flag on whether odd or even Lanes are indented */
+	private boolean indentOdd = false;
 	private int score = 0;
 	private int oldScore = -1;
 	private boolean running = true;
+	/** Anzahl der Sekunden bis zum Spielstart */
 	private long startingTime;
+	/** Schrift Objekt zum zeichnen von Text */
+	private TrueTypeFont font;
+	private Hexagon[][] hexagons;
 
 	public float getAnimation_offset() {
 		return animationOffset;
 	}
 
+	/**
+	 * Werden die ungeraden Reihen eingerückt?
+	 *
+	 * @return if the odd rows are indented
+	 */
 	public boolean isIndent_odd() {
-		return indent_odd;
+		return indentOdd;
 	}
 
 	/**
@@ -82,13 +118,18 @@ public class Fluxagon implements Constants {
 			System.exit(1);
 		}
 
-		flux.init();
-
+		flux.initResources();
+		flux.initGame();
 		flux.run();
 
 		flux.destroy();
 	}
 
+	/**
+	 * Initialise OpenGL
+	 *
+	 * @throws LWJGLException
+	 */
 	private void initGL() throws LWJGLException {
 		// Display
 		Display.setDisplayMode(new DisplayMode(WINDOW_WIDTH, WINDOW_HEIGHT));
@@ -127,7 +168,10 @@ public class Fluxagon implements Constants {
 		Display.destroy();
 	}
 
-	private void init() {
+	/**
+	 * Initialise (/reset) the game variables
+	 */
+	private void initGame() {
 		hexagons = new Hexagon[ROW_COUNT][COLUMN_COUNT];
 		for (int i = 1; i < ROW_COUNT; i++) {
 			for (int j = 0; j < COLUMN_COUNT; j++) {
@@ -135,10 +179,20 @@ public class Fluxagon implements Constants {
 			}
 		}
 		hexagons[4][4].connect();
-		indent_odd = false;
+		indentOdd = false;
 		animationOffset = 0;
 		score = 0;
-		startingTime = 4000L;
+		startingTime = STARTUP_TIME;
+	}
+
+	/**
+	 * Initialise resources
+	 */
+	private void initResources() {
+		Display.setTitle("loading Resources");
+		Font awtFont = new Font("Verdana", Font.BOLD, 20);
+		font = new TrueTypeFont(awtFont, antiAlias);
+		Display.setTitle(WINDOW_TITLE);
 	}
 
 	public void incScore(int scr) {
@@ -148,7 +202,7 @@ public class Fluxagon implements Constants {
 	private Hexagon getHexAt(float x, float y) {
 		int row = Math.round(((y - HEX_OFFSET_Y + animationOffset) / HEX_HEIGHT + 1) / 1.5f);
 		// Verschiebung beachten
-		if (indent_odd ^ row % 2 == 0) {
+		if (indentOdd ^ row % 2 == 0) {
 			x -= HEX_WIDTH;
 		}
 		int column = Math.round(((x - HEX_OFFSET_X) / HEX_WIDTH - 1) / 2);
@@ -160,6 +214,9 @@ public class Fluxagon implements Constants {
 		return null;
 	}
 
+	/**
+	 * Game loop
+	 */
 	private void run() {
 		lastFpsTime = getTime();
 		lastUpdateTime = getTime();
@@ -194,7 +251,7 @@ public class Fluxagon implements Constants {
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
-					init();
+					initGame();
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_SPACE) {
 					for (int i = 0; i < hexagons.length; i++) {
 						for (int j = 0; j < hexagons[i].length; j++) {
@@ -209,7 +266,6 @@ public class Fluxagon implements Constants {
 	}
 
 	private void processMouse() {
-		//System.out.println(Mouse.getX() + ", " + Mouse.getY());
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				if (Mouse.getEventButton() == 0) {
@@ -233,38 +289,54 @@ public class Fluxagon implements Constants {
 			return;
 		}
 		lastUpdateTime += UPDATE_TIME;
-		
-		oldScore = score;
-		animationOffset += 0.1; // Abhängig von der Zeit machen TODO!
-		if (animationOffset >= 1.5 * HEX_HEIGHT) {
-			animationOffset = 0;
-			indent_odd = !indent_odd;
-			for (int i = 0; i < ROW_COUNT - 1; i++) {
-				hexagons[i] = hexagons[i + 1];
-				for (int k = 0; k < COLUMN_COUNT; k++) {
-					hexagons[i][k].setRow(i);
+
+		if (startingTime > 0) {
+			startingTime -= UPDATE_TIME;
+			updateTitle();
+		} else {
+			oldScore = score;
+
+			animationOffset += SCROLL_SPEED;
+			if (animationOffset >= 1.5 * HEX_HEIGHT) {
+				animationOffset = 0;
+				indentOdd = !indentOdd;
+				for (int i = 0; i < ROW_COUNT - 1; i++) {
+					hexagons[i] = hexagons[i + 1];
+					for (int k = 0; k < COLUMN_COUNT; k++) {
+						hexagons[i][k].setRow(i);
+					}
+				}
+				hexagons[ROW_COUNT - 1] = new Hexagon[COLUMN_COUNT];
+				for (int j = 0; j < COLUMN_COUNT; j++) {
+					hexagons[ROW_COUNT - 1][j] = new Hexagon(this, ROW_COUNT - 1, j);
 				}
 			}
-			hexagons[ROW_COUNT - 1] = new Hexagon[COLUMN_COUNT];
-			for (int j = 0; j < COLUMN_COUNT; j++) {
-				hexagons[ROW_COUNT - 1][j] = new Hexagon(this, ROW_COUNT - 1, j);
+
+
+			for (int i = 0; i < hexagons.length; i++) {
+				for (int j = 0; j < hexagons[i].length; j++) {
+					if (hexagons[i][j] != null) {
+						hexagons[i][j].update();
+					}
+				}
 			}
+
+			// Spiel verloren?
+			// tritt leider manchmal einfach so ein
+			/*if (score == oldScore) {
+			 System.out.println("You lost. Score: " + score / 100);
+			 running = false;
+			 }*/
+
 		}
 
 		for (int i = 0; i < hexagons.length; i++) {
 			for (int j = 0; j < hexagons[i].length; j++) {
 				if (hexagons[i][j] != null) {
-					hexagons[i][j].update();
+					hexagons[i][j].animate();
 				}
 			}
-
 		}
-		// Spiel verloren?
-		// tritt leider manchmal einfach so ein
-		/*if (score == oldScore) {
-		 System.out.println("You lost. Score: " + score / 100);
-		 running = false;
-		 }*/
 	}
 
 	public void appendColor(double[] color) {
@@ -277,6 +349,7 @@ public class Fluxagon implements Constants {
 
 	private void render() {
 		glClear(GL_COLOR_BUFFER_BIT);
+		glDisable(GL_TEXTURE_2D);
 		for (int i = 0; i < hexagons.length; i++) {
 			for (int j = 0; j < hexagons[i].length; j++) {
 				if (hexagons[i][j] != null) {
@@ -284,6 +357,47 @@ public class Fluxagon implements Constants {
 				}
 			}
 		}
+		
+		// render text
+		drawText(0, 0, "FPS: " + fps, Color.white, true, false);
+		drawText(0, 30, "Score: " + score, Color.white, true, false);
+		if (startingTime > 0) {
+			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
+					"Starting in: " + (Math.round((float)startingTime / 1000)), Color.white,
+					true, true);
+		}
+	}
+
+	public void drawText(int x, int y, String text, Color color,
+			boolean background, boolean alignMid) {
+		int width = font.getWidth(text);
+		int height = font.getHeight(text);
+		if (alignMid) {
+			x -= width / 2;
+			y -= height / 2;
+		}
+		glPushMatrix();
+		glLoadIdentity();
+		glTranslatef(x, y, 0);
+		if (background) {
+			glColor4d(0.4, 0.4, 0.4, 0.4);
+			drawQuad(width, height);
+		}
+		// Text zeichnen
+		glEnable(GL_TEXTURE_2D);
+		font.drawString(4, 0, text, color);
+		glPopMatrix();
+	}
+
+	public void drawQuad(int width, int height) {
+		// Hintergrund zeichnen
+		glDisable(GL_TEXTURE_2D);
+		glBegin(GL_QUADS);
+		glVertex2i(0, 0);
+		glVertex2i(0, height + 2);
+		glVertex2i(width + 6, height + 2);
+		glVertex2i(width + 6, 0);
+		glEnd();
 	}
 
 	public Hexagon[][] getHexagons() {
@@ -300,18 +414,34 @@ public class Fluxagon implements Constants {
 	}
 
 	/**
-	 * Calculate the FPS and set it in the title bar
+	 * Calculate the FPS and update the title bar
 	 */
 	public void updateFps() {
 		if (getTime() - lastFpsTime > 1000) {
+			fps = frameCount;
 			updateTitle();
-			fps = 0;
+			frameCount = 0;
 			lastFpsTime += 1000;
 		}
-		fps++;
+		frameCount++;
 	}
 
+	/**
+	 * Update the title bar
+	 */
 	public void updateTitle() {
-		Display.setTitle(WINDOW_TITLE + " - " + fps + "fps" + " score: " + score / 100);
+		/*if (startingTime > 0) {
+		 Display.setTitle("Start in: " + ((int) Math.ceil((float) startingTime / 1000)));
+		 } else {
+		 Display.setTitle(WINDOW_TITLE + " - " + fps + " fps" + " score: " + score / 100);
+		 }*/
+	}
+
+	/**
+	 *
+	 * @return if startup time is not over
+	 */
+	public boolean isWaitingToStart() {
+		return startingTime > 0;
 	}
 }

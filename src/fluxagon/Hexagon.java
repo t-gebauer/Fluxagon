@@ -62,33 +62,6 @@ public class Hexagon implements Constants {
 	}
 
 	public void update() {
-		// Drehen
-		float dif = goalRotation - rotation;
-		if (dif < 0) {
-			dif = -dif;
-			if (dif < HEX_ROTATION_DIST) {
-				rotation -= dif;
-			} else {
-				rotation -= HEX_ROTATION_DIST;
-			}
-		} else if (dif > 0) {
-			if (dif < HEX_ROTATION_DIST) {
-				rotation += dif;
-			} else {
-				rotation += HEX_ROTATION_DIST;
-			}
-		} else if (rotation >= 360 || rotation <= 360) {
-			rotation %= 360;
-			goalRotation = rotation;
-		}
-
-		// Farbe leicht verändern
-		if (Math.random() > 0.5) {
-			brightness += 0.01;
-		} else {
-			brightness -= 0.01;
-		}
-
 		// Strom Ausbreitung
 		// (nicht fließen lassen, wenn rotierend, oder gar nicht connected)
 		if (connected && goalRotation == rotation) {
@@ -178,9 +151,37 @@ public class Hexagon implements Constants {
 		this.row = row;
 	}
 
+	public void animate() {
+		// Drehen
+		float dif = goalRotation - rotation;
+		if (dif < 0) {
+			dif = -dif;
+			if (dif < HEX_ROTATION_DIST) {
+				rotation -= dif;
+			} else {
+				rotation -= HEX_ROTATION_DIST;
+			}
+		} else if (dif > 0) {
+			if (dif < HEX_ROTATION_DIST) {
+				rotation += dif;
+			} else {
+				rotation += HEX_ROTATION_DIST;
+			}
+		} else if (rotation >= 360 || rotation <= 360) {
+			rotation %= 360;
+			goalRotation = rotation;
+		}
+
+		// Farbe leicht verändern
+		if (Math.random() > 0.5) {
+			brightness += 0.01;
+		} else {
+			brightness -= 0.01;
+		}
+	}
+
 	// zeichnet das Hexagon
 	public void draw() {
-
 		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
 		float y = HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT - main.getAnimation_offset();
 
