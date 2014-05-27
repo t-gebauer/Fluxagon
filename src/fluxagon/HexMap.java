@@ -24,7 +24,7 @@ public class HexMap implements Constants {
 				hexagons[i][j] = new Hexagon(main, i, j);
 			}
 		}
-		hexagons[4][4].connect();
+		hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2].connect();
 	}
 
 	/**
@@ -59,6 +59,9 @@ public class HexMap implements Constants {
 		return null;
 	}
 
+	/**
+	 * Bewegt die Map
+	 */
 	public void scroll() {
 		animationOffset += SCROLL_SPEED;
 		if (animationOffset >= 1.5 * HEX_HEIGHT) {
@@ -77,6 +80,9 @@ public class HexMap implements Constants {
 		}
 	}
 
+	/**
+	 * Update der Spiel-Mechanik 
+	 */
 	public void update() {
 		for (int i = 0; i < hexagons.length; i++) {
 			for (int j = 0; j < hexagons[i].length; j++) {
@@ -87,6 +93,9 @@ public class HexMap implements Constants {
 		}
 	}
 
+	/**
+	 * Update der Animations-Mechanik
+	 */
 	public void animate() {
 		for (int i = 0; i < hexagons.length; i++) {
 			for (int j = 0; j < hexagons[i].length; j++) {
@@ -97,6 +106,9 @@ public class HexMap implements Constants {
 		}
 	}
 
+	/**
+	 * Grafische Ausgabe
+	 */
 	public void render() {
 		for (int i = 0; i < hexagons.length; i++) {
 			for (int j = 0; j < hexagons[i].length; j++) {

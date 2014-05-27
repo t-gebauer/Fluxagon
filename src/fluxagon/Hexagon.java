@@ -37,6 +37,9 @@ public class Hexagon implements Constants {
 		}
 	}
 
+	/**
+	 * Verbindet das Hexagon "von innen"
+	 */
 	public void connect() {
 		connected = true;
 		for (int i = 0; i < 6; i++) {
@@ -46,6 +49,24 @@ public class Hexagon implements Constants {
 		}
 	}
 
+	/**
+	 * Verbindet eine Lane des Hexagons von außen.
+	 * <p>
+	 * Die Nummern der Lanes sind gegen den Uhrzeigersinn verteilt; startend bei
+	 * der linken unteren Ecke mit 0.
+	 * <br>&nbsp/ 2&nbsp| 3&nbsp\
+	 * <br>| 1&nbsp&nbsp|&nbsp 4&nbsp|
+	 * <br>&nbsp\ 0&nbsp| 5&nbsp/
+	 *
+	 * @param num Die Nummer der Lane:
+	 * <ul>
+	 * <li>0: links-unten
+	 * <li>1: links-mitte
+	 * <li>2: links-oben
+	 * <li>3: rechts-oben
+	 * <li>4: rechts-mitte
+	 * <li>5: rechts-unten
+	 */
 	public void connectLane(int num) {
 		num = (num - Math.round(goalRotation / 60)) % 6;
 		if (num < 0) {
@@ -61,10 +82,12 @@ public class Hexagon implements Constants {
 		}
 	}
 
+	/**
+	 * Update der Game-Mechanik (Strom-Ausbreitung usw.)
+	 */
 	public void update() {
 		// Strom Ausbreitung
-		// (nicht fließen lassen, wenn rotierend, oder gar nicht connected)
-		if (connected && goalRotation == rotation) {
+		if (connected) {
 			for (int i = 0; i < 6; i++) {
 				Lane l = lanes[i];
 				if (l == null) {
@@ -94,36 +117,36 @@ public class Hexagon implements Constants {
 							switch (num) {
 								case 0:
 									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row + 1,column - 1).connectLane(3);
+										main.getMap().getHex(row + 1, column - 1).connectLane(3);
 									} else {
-										main.getMap().getHex(row + 1,column).connectLane(3);
+										main.getMap().getHex(row + 1, column).connectLane(3);
 									}
 									break;
 								case 1:
-									main.getMap().getHex(row,column - 1).connectLane(4);
+									main.getMap().getHex(row, column - 1).connectLane(4);
 									break;
 								case 2:
 									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row - 1,column - 1).connectLane(5);
+										main.getMap().getHex(row - 1, column - 1).connectLane(5);
 									} else {
-										main.getMap().getHex(row - 1,column).connectLane(5);
+										main.getMap().getHex(row - 1, column).connectLane(5);
 									}
 									break;
 								case 3:
 									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row - 1,column).connectLane(0);
+										main.getMap().getHex(row - 1, column).connectLane(0);
 									} else {
-										main.getMap().getHex(row - 1,column + 1).connectLane(0);
+										main.getMap().getHex(row - 1, column + 1).connectLane(0);
 									}
 									break;
 								case 4:
-									main.getMap().getHex(row,column + 1).connectLane(1);
+									main.getMap().getHex(row, column + 1).connectLane(1);
 									break;
 								case 5:
 									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row + 1,column).connectLane(2);
+										main.getMap().getHex(row + 1, column).connectLane(2);
 									} else {
-										main.getMap().getHex(row + 1,column + 1).connectLane(2);
+										main.getMap().getHex(row + 1, column + 1).connectLane(2);
 									}
 									break;
 							}
@@ -135,12 +158,18 @@ public class Hexagon implements Constants {
 		}
 	}
 
+	/**
+	 * Rotiert das Hexagon im Uhrzeigersinn um 60 Grad
+	 */
 	public void rotateCW() {
 		if (!connected) {
 			goalRotation += 60;
 		}
 	}
 
+	/**
+	 * Rotiert das Hexagon gegen den Uhrzeigersinn um 60 Grad
+	 */
 	public void rotateCCW() {
 		if (!connected) {
 			goalRotation -= 60;
@@ -151,6 +180,9 @@ public class Hexagon implements Constants {
 		this.row = row;
 	}
 
+	/**
+	 * Update der Animations-Mechanik (Drehung)
+	 */
 	public void animate() {
 		// Drehen
 		float dif = goalRotation - rotation;
@@ -180,7 +212,9 @@ public class Hexagon implements Constants {
 		}
 	}
 
-	// zeichnet das Hexagon
+	/**
+	 * Zeichnen des Hexagons, sowie der dazugehörigen Lanes
+	 */
 	public void render() {
 		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
 		float y = HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT - main.getMap().getAnimationOffset();
@@ -193,16 +227,32 @@ public class Hexagon implements Constants {
 		main.appendColor(COLOR_HEXAGON, brightness);
 
 		glLoadIdentity();
-		glTranslatef(x, y, 0);
+		if (rotation != goalRotation) {
+			glTranslatef(x, y, 1);
+		} else {
+			glTranslatef(x, y, 0);
+		}
 		glRotatef(rotation, 0, 0, 1);
 
 		glBegin(GL_POLYGON);
-		glVertex2f(0, 0 - HEX_HEIGHT);
-		glVertex2f(0 - HEX_WIDTH, 0 - HEX_HEIGHT / 2f);
-		glVertex2f(0 - HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
-		glVertex2f(0, 0 + HEX_HEIGHT);
-		glVertex2f(0 + HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
-		glVertex2f(0 + HEX_WIDTH, 0 - HEX_HEIGHT / 2f);
+		if (main.getCircleMode()) {
+			glVertex2f(0, 0);
+			for (int i = 0; i < 360; i++) {
+				glVertex2f((float) Math.sin(i) * HEX_WIDTH,
+						(float) Math.cos(i) * HEX_WIDTH);
+			}
+		} else {
+			for (int i = 0; i < 6; i++) {
+				glVertex2f((float) Math.sin(i * Math.PI / 3) * HEX_HEIGHT,
+						(float) Math.cos(i * Math.PI / 3) * HEX_HEIGHT);
+			}
+		}
+		/*glVertex2f(0, 0 - HEX_HEIGHT);
+		 glVertex2f(0 - HEX_WIDTH, 0 - HEX_HEIGHT / 2f);
+		 glVertex2f(0 - HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
+		 glVertex2f(0, 0 + HEX_HEIGHT);
+		 glVertex2f(0 + HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
+		 glVertex2f(0 + HEX_WIDTH, 0 - HEX_HEIGHT / 2f);*/
 		glEnd();
 
 		// Wege
@@ -292,14 +342,5 @@ public class Hexagon implements Constants {
 					-1 * dx, -1 * dy,
 					pc2);
 		}
-	}
-
-	public void drawLines() {
-		/*float x = HEX_OFFSET + column * (2 * HEX_WIDTH + HEX_OFFSET);
-		 float y = main.y_offset + row * (1.5f * HEX_HEIGHT + HEX_OFFSET);
-		 if (row % 2 != 0) {
-		 x += HEX_WIDTH;
-		 }
-		 */
 	}
 }

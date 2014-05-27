@@ -13,6 +13,7 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
+import org.lwjgl.opengl.PixelFormat;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
 
@@ -29,7 +30,7 @@ interface Constants {
 	/** Der Titel des Fensters */
 	public static final String WINDOW_TITLE = "Fluxagon";
 	/** Anzahl der horizontalen Spalten */
-	public static final int COLUMN_COUNT = 10;
+	public static final int COLUMN_COUNT = 7;
 	/** Anzahl der Reihen (wird irgendwie aus der Anzahl der Spalten und dem
 	 * Seitenverhältnis des Fensters berechnet) */
 	public static final int ROW_COUNT =
@@ -48,9 +49,9 @@ interface Constants {
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final float FLUX_SPEED = 0.02f;
+	public static final float FLUX_SPEED = 0.03f;
 	/** Scrollgeschwindigkeit der Map */
-	public static final double SCROLL_SPEED = 0.2;
+	public static final double SCROLL_SPEED = 0.3;
 	/** Farbdefinition für die Hexagone */
 	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
 	/** Farbdefinition für den Hintergrund der Lanes */
@@ -73,8 +74,6 @@ public class Fluxagon implements Constants {
 	private long lastUpdateTime;
 	/** Boolean flag on whether are capped to 60 per second or not */
 	private boolean capFPS = true;
-	/** Boolean flag on whether Lanes are drawn or not */
-	private boolean drawLines = true;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
 	private boolean antiAlias = true;
 	private int score = 0;
@@ -85,9 +84,27 @@ public class Fluxagon implements Constants {
 	/** Schrift Objekt zum zeichnen von Text */
 	private TrueTypeFont font;
 	private HexMap map;
+	/** Boolean flag on whether the game is paused or not */
+	private boolean paused = false;
+	/** Boolean flag on whether the game is over */
+	private boolean isOver;
+	/** Boolean flag on whether circles or hexagons are drawn */
+	private boolean circleMode = false;
 
 	public HexMap getMap() {
 		return map;
+	}
+
+	public void incScore(int scr) {
+		score += scr;
+	}
+
+	/**
+	 *
+	 * @return if startup time is not over
+	 */
+	public boolean isWaitingToStart() {
+		return startingTime > 0;
 	}
 
 	/**
@@ -123,7 +140,7 @@ public class Fluxagon implements Constants {
 		Display.setDisplayMode(new DisplayMode(WINDOW_WIDTH, WINDOW_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
-		Display.create();
+		Display.create(new PixelFormat());
 
 		// Keyboard
 		Keyboard.create();
@@ -136,6 +153,12 @@ public class Fluxagon implements Constants {
 		glLoadIdentity();
 		glOrtho(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 1, -1);
 		glMatrixMode(GL_MODELVIEW);
+
+		// Tiefenpuffer
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LEQUAL);
+		glClearDepth(1);
+		glDepthMask(true);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glLineWidth(3.0f);
@@ -150,19 +173,24 @@ public class Fluxagon implements Constants {
 		glClearColor(0, 0, 0, 1);
 	}
 
-	private void destroy() {
-		Keyboard.destroy();
-		Mouse.destroy();
-		Display.destroy();
-	}
-
 	/**
 	 * Initialise (/reset) the game variables
 	 */
 	private void initGame() {
 		map = new HexMap(this);
+		paused = false;
+		isOver = false;
 		score = 0;
 		startingTime = STARTUP_TIME;
+	}
+
+	/**
+	 * Get the value of circleMode
+	 *
+	 * @return the value of circleMode
+	 */
+	public boolean getCircleMode() {
+		return circleMode;
 	}
 
 	/**
@@ -175,10 +203,6 @@ public class Fluxagon implements Constants {
 		Display.setTitle(WINDOW_TITLE);
 	}
 
-	public void incScore(int scr) {
-		score += scr;
-	}
-	
 	/**
 	 * Game loop
 	 */
@@ -207,14 +231,23 @@ public class Fluxagon implements Constants {
 			}
 		}
 	}
-
+	
+	/**
+	 * Deal with keyboard input
+	 */
 	private void processKeyboard() {
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
-				if (Keyboard.getEventKey() == Keyboard.KEY_P) {
+				if (Keyboard.getEventKey() == Keyboard.KEY_PAUSE) {
+					if (!isOver) {
+						paused = paused ? false : true;
+					}
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
 					initGame();
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_M) {
+					circleMode = circleMode ? false : true;
 				}
 			} else {
 				// Key Release
@@ -222,24 +255,32 @@ public class Fluxagon implements Constants {
 		}
 	}
 
+	/**
+	 * Deal with mouse input
+	 */
 	private void processMouse() {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
-				if (Mouse.getEventButton() == 0) {
-					Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
-					if (hex != null) {
-						hex.rotateCW();
-					}
-				} else if (Mouse.getEventButton() == 1) {
-					Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
-					if (hex != null) {
-						hex.rotateCCW();
+				if (!paused) {
+					if (Mouse.getEventButton() == 0) {
+						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+						if (hex != null) {
+							hex.rotateCW();
+						}
+					} else if (Mouse.getEventButton() == 1) {
+						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+						if (hex != null) {
+							hex.rotateCCW();
+						}
 					}
 				}
 			}
 		}
 	}
-
+	
+	/**
+	 * Updates game-logic (25 times per second)
+	 */
 	private void update() {
 		// Updates auf 25x pro Sekunde begrenzen
 		if (getTime() - lastUpdateTime < UPDATE_TIME) {
@@ -247,24 +288,23 @@ public class Fluxagon implements Constants {
 		}
 		lastUpdateTime += UPDATE_TIME;
 
-		if (startingTime > 0) {
-			startingTime -= UPDATE_TIME;
-			updateTitle();
-		} else {
-			oldScore = score;
-			
-			map.scroll();
-			map.update();
+		if (!paused) {
+			if (startingTime > 0) {
+				startingTime -= UPDATE_TIME;
+				updateTitle();
+			} else {
+				oldScore = score;
 
-			// Spiel verloren?
-			// tritt leider manchmal einfach so ein
-			if (score == oldScore) {
-			 System.out.println("You lost. Score: " + score / 100);
-			 running = false;
-			 }
+				map.scroll();
+				map.update();
 
+				// Spiel verloren?
+				// tritt leider manchmal einfach so ein
+				if (score == oldScore) {
+					isOver = true;
+				}
+			}
 		}
-
 		map.animate();
 	}
 
@@ -277,7 +317,7 @@ public class Fluxagon implements Constants {
 	}
 
 	private void render() {
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_TEXTURE_2D);
 		map.render();
 
@@ -289,8 +329,27 @@ public class Fluxagon implements Constants {
 					"Starting in: " + (Math.round((float) startingTime / 1000)), Color.white,
 					true, true);
 		}
+		// game over and pause messages
+		if (isOver) {
+			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+					"Game over :/", Color.white, true, true);
+		} else if (paused) {
+			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+					"Paused", Color.white, true, true);
+		}
 	}
 
+	/**
+	 * Zeichnet einen Text
+	 *
+	 * @param x Position der linken oberen Ecke
+	 * @param y Position der linken oberen Ecke
+	 * @param text Der Text
+	 * @param color Die Farbe des Textes
+	 * @param background Gibt an, ob ein rechteckiger Hintergrund gezeichnet
+	 * werden soll
+	 * @param alignMid Gibt an, ob (x,y) der Mittelpunkt des Textes sein soll
+	 */
 	public void drawText(int x, int y, String text, Color color,
 			boolean background, boolean alignMid) {
 		int width = font.getWidth(text);
@@ -304,6 +363,7 @@ public class Fluxagon implements Constants {
 		glTranslatef(x, y, 0);
 		if (background) {
 			glColor4d(0.4, 0.4, 0.4, 0.4);
+			// Hintergrund zeichnen
 			drawQuad(width, height);
 		}
 		// Text zeichnen
@@ -312,8 +372,14 @@ public class Fluxagon implements Constants {
 		glPopMatrix();
 	}
 
+	/**
+	 * Zeichnet ein Viereck mit der linken oberen Ecke im aktuellen Koordinaten-
+	 * Ursprung
+	 *
+	 * @param width Weite des Rechtecks
+	 * @param height Höhe des Rechtecks
+	 */
 	public void drawQuad(int width, int height) {
-		// Hintergrund zeichnen
 		glDisable(GL_TEXTURE_2D);
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);
@@ -356,11 +422,9 @@ public class Fluxagon implements Constants {
 		 }*/
 	}
 
-	/**
-	 *
-	 * @return if startup time is not over
-	 */
-	public boolean isWaitingToStart() {
-		return startingTime > 0;
+	private void destroy() {
+		Keyboard.destroy();
+		Mouse.destroy();
+		Display.destroy();
 	}
 }
