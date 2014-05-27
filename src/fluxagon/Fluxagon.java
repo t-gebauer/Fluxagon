@@ -261,7 +261,7 @@ public class Fluxagon implements Constants {
 	private void processMouse() {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
-				if (!paused) {
+				if (!paused && !isOver) {
 					if (Mouse.getEventButton() == 0) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {

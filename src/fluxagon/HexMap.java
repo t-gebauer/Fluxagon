@@ -60,6 +60,52 @@ public class HexMap implements Constants {
 	}
 
 	/**
+	 * Selects a hexagon dependent on its neighbor
+	 *
+	 * @param row Row of the neighbor
+	 * @param column Column of the neighbor
+	 * @param side Bordering side (from the neighbors point of view)
+	 * @return
+	 */
+	public Hexagon getHexRel(int row, int column, HexSide side) {
+		try {
+			switch (side) {
+				case LEFT_BOTTOM:
+					if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+						return hexagons[row + 1][column - 1];
+					} else {
+						return hexagons[row + 1][column];
+					}
+				case LEFT_MID:
+					return hexagons[row][column - 1];
+				case LEFT_TOP:
+					if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+						return hexagons[row - 1][column - 1];
+					} else {
+						return hexagons[row - 1][column];
+					}
+				case RIGHT_TOP:
+					if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+						return hexagons[row - 1][column];
+					} else {
+						return hexagons[row - 1][column + 1];
+					}
+				case RIGHT_MID:
+					return hexagons[row][column + 1];
+				case RIGHT_BOTTOM:
+					if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+						return hexagons[row + 1][column];
+					} else {
+						return hexagons[row + 1][column + 1];
+					}
+			}
+		} catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
+			// Tritt wahrscheinlich häufiger auf
+		}
+		return null;
+	}
+
+	/**
 	 * Bewegt die Map
 	 */
 	public void scroll() {
@@ -81,7 +127,7 @@ public class HexMap implements Constants {
 	}
 
 	/**
-	 * Update der Spiel-Mechanik 
+	 * Update der Spiel-Mechanik
 	 */
 	public void update() {
 		for (int i = 0; i < hexagons.length; i++) {

@@ -20,6 +20,7 @@ public class Hexagon implements Constants {
 	private Fluxagon main = null;
 	private float rotation; // momentane Rotation (in Grad)
 	private float goalRotation; // gewollte Rotation (in Grad)
+	private boolean flashing = false;
 
 	public Hexagon(Fluxagon main, int row, int column) {
 		this.main = main;
@@ -78,8 +79,13 @@ public class Hexagon implements Constants {
 				lanes[num].setInConnected(true);
 			}
 		} catch (ArrayIndexOutOfBoundsException e) {
+			// Sollte niemals eintreten
 			System.out.println("Index out of bounds: " + num);
 		}
+	}
+
+	private void connectLane(HexSide side) {
+		connectLane(side.ordinal());
 	}
 
 	/**
@@ -113,44 +119,10 @@ public class Hexagon implements Constants {
 						if (num < 0) {
 							num = 6 + num;
 						}
-						try {
-							switch (num) {
-								case 0:
-									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row + 1, column - 1).connectLane(3);
-									} else {
-										main.getMap().getHex(row + 1, column).connectLane(3);
-									}
-									break;
-								case 1:
-									main.getMap().getHex(row, column - 1).connectLane(4);
-									break;
-								case 2:
-									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row - 1, column - 1).connectLane(5);
-									} else {
-										main.getMap().getHex(row - 1, column).connectLane(5);
-									}
-									break;
-								case 3:
-									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row - 1, column).connectLane(0);
-									} else {
-										main.getMap().getHex(row - 1, column + 1).connectLane(0);
-									}
-									break;
-								case 4:
-									main.getMap().getHex(row, column + 1).connectLane(1);
-									break;
-								case 5:
-									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
-										main.getMap().getHex(row + 1, column).connectLane(2);
-									} else {
-										main.getMap().getHex(row + 1, column + 1).connectLane(2);
-									}
-									break;
-							}
-						} catch (ArrayIndexOutOfBoundsException | NullPointerException e) {
+						HexSide side = HexSide.fromValue(num);
+						Hexagon hex = main.getMap().getHexRel(row, column, side);
+						if (hex != null) {
+							hex.connectLane(side.opposite());
 						}
 					}
 				}
