@@ -77,9 +77,6 @@ public class Fluxagon implements Constants {
 	private boolean drawLines = true;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
 	private boolean antiAlias = true;
-	private float animationOffset = 0;
-	/** Boolean flag on whether odd or even Lanes are indented */
-	private boolean indentOdd = false;
 	private int score = 0;
 	private int oldScore = -1;
 	private boolean running = true;
@@ -87,19 +84,10 @@ public class Fluxagon implements Constants {
 	private long startingTime;
 	/** Schrift Objekt zum zeichnen von Text */
 	private TrueTypeFont font;
-	private Hexagon[][] hexagons;
+	private HexMap map;
 
-	public float getAnimation_offset() {
-		return animationOffset;
-	}
-
-	/**
-	 * Werden die ungeraden Reihen eingerückt?
-	 *
-	 * @return if the odd rows are indented
-	 */
-	public boolean isIndent_odd() {
-		return indentOdd;
+	public HexMap getMap() {
+		return map;
 	}
 
 	/**
@@ -172,15 +160,7 @@ public class Fluxagon implements Constants {
 	 * Initialise (/reset) the game variables
 	 */
 	private void initGame() {
-		hexagons = new Hexagon[ROW_COUNT][COLUMN_COUNT];
-		for (int i = 1; i < ROW_COUNT; i++) {
-			for (int j = 0; j < COLUMN_COUNT; j++) {
-				hexagons[i][j] = new Hexagon(this, i, j);
-			}
-		}
-		hexagons[4][4].connect();
-		indentOdd = false;
-		animationOffset = 0;
+		map = new HexMap(this);
 		score = 0;
 		startingTime = STARTUP_TIME;
 	}
@@ -198,22 +178,7 @@ public class Fluxagon implements Constants {
 	public void incScore(int scr) {
 		score += scr;
 	}
-
-	private Hexagon getHexAt(float x, float y) {
-		int row = Math.round(((y - HEX_OFFSET_Y + animationOffset) / HEX_HEIGHT + 1) / 1.5f);
-		// Verschiebung beachten
-		if (indentOdd ^ row % 2 == 0) {
-			x -= HEX_WIDTH;
-		}
-		int column = Math.round(((x - HEX_OFFSET_X) / HEX_WIDTH - 1) / 2);
-
-		try {
-			return hexagons[row][column];
-		} catch (ArrayIndexOutOfBoundsException e) {
-		}
-		return null;
-	}
-
+	
 	/**
 	 * Game loop
 	 */
@@ -246,18 +211,10 @@ public class Fluxagon implements Constants {
 	private void processKeyboard() {
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
-				if (Keyboard.getEventKey() == Keyboard.KEY_L) {
-					drawLines = drawLines ? false : true;
-				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
+				if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
 					initGame();
-				} else if (Keyboard.getEventKey() == Keyboard.KEY_SPACE) {
-					for (int i = 0; i < hexagons.length; i++) {
-						for (int j = 0; j < hexagons[i].length; j++) {
-							hexagons[i][j].update();
-						}
-					}
 				}
 			} else {
 				// Key Release
@@ -269,12 +226,12 @@ public class Fluxagon implements Constants {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				if (Mouse.getEventButton() == 0) {
-					Hexagon hex = getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+					Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 					if (hex != null) {
 						hex.rotateCW();
 					}
 				} else if (Mouse.getEventButton() == 1) {
-					Hexagon hex = getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+					Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 					if (hex != null) {
 						hex.rotateCCW();
 					}
@@ -295,48 +252,20 @@ public class Fluxagon implements Constants {
 			updateTitle();
 		} else {
 			oldScore = score;
-
-			animationOffset += SCROLL_SPEED;
-			if (animationOffset >= 1.5 * HEX_HEIGHT) {
-				animationOffset = 0;
-				indentOdd = !indentOdd;
-				for (int i = 0; i < ROW_COUNT - 1; i++) {
-					hexagons[i] = hexagons[i + 1];
-					for (int k = 0; k < COLUMN_COUNT; k++) {
-						hexagons[i][k].setRow(i);
-					}
-				}
-				hexagons[ROW_COUNT - 1] = new Hexagon[COLUMN_COUNT];
-				for (int j = 0; j < COLUMN_COUNT; j++) {
-					hexagons[ROW_COUNT - 1][j] = new Hexagon(this, ROW_COUNT - 1, j);
-				}
-			}
-
-
-			for (int i = 0; i < hexagons.length; i++) {
-				for (int j = 0; j < hexagons[i].length; j++) {
-					if (hexagons[i][j] != null) {
-						hexagons[i][j].update();
-					}
-				}
-			}
+			
+			map.scroll();
+			map.update();
 
 			// Spiel verloren?
 			// tritt leider manchmal einfach so ein
-			/*if (score == oldScore) {
+			if (score == oldScore) {
 			 System.out.println("You lost. Score: " + score / 100);
 			 running = false;
-			 }*/
+			 }
 
 		}
 
-		for (int i = 0; i < hexagons.length; i++) {
-			for (int j = 0; j < hexagons[i].length; j++) {
-				if (hexagons[i][j] != null) {
-					hexagons[i][j].animate();
-				}
-			}
-		}
+		map.animate();
 	}
 
 	public void appendColor(double[] color) {
@@ -350,20 +279,14 @@ public class Fluxagon implements Constants {
 	private void render() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glDisable(GL_TEXTURE_2D);
-		for (int i = 0; i < hexagons.length; i++) {
-			for (int j = 0; j < hexagons[i].length; j++) {
-				if (hexagons[i][j] != null) {
-					hexagons[i][j].draw();
-				}
-			}
-		}
-		
+		map.render();
+
 		// render text
 		drawText(0, 0, "FPS: " + fps, Color.white, true, false);
 		drawText(0, 30, "Score: " + score, Color.white, true, false);
 		if (startingTime > 0) {
 			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
-					"Starting in: " + (Math.round((float)startingTime / 1000)), Color.white,
+					"Starting in: " + (Math.round((float) startingTime / 1000)), Color.white,
 					true, true);
 		}
 	}
@@ -398,10 +321,6 @@ public class Fluxagon implements Constants {
 		glVertex2i(width + 6, height + 2);
 		glVertex2i(width + 6, 0);
 		glEnd();
-	}
-
-	public Hexagon[][] getHexagons() {
-		return hexagons;
 	}
 
 	/**

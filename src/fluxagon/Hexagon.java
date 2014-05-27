@@ -93,37 +93,37 @@ public class Hexagon implements Constants {
 						try {
 							switch (num) {
 								case 0:
-									if (row % 2 == 0 ^ !main.isIndent_odd()) {
-										main.getHexagons()[row + 1][column - 1].connectLane(3);
+									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+										main.getMap().getHex(row + 1,column - 1).connectLane(3);
 									} else {
-										main.getHexagons()[row + 1][column].connectLane(3);
+										main.getMap().getHex(row + 1,column).connectLane(3);
 									}
 									break;
 								case 1:
-									main.getHexagons()[row][column - 1].connectLane(4);
+									main.getMap().getHex(row,column - 1).connectLane(4);
 									break;
 								case 2:
-									if (row % 2 == 0 ^ !main.isIndent_odd()) {
-										main.getHexagons()[row - 1][column - 1].connectLane(5);
+									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+										main.getMap().getHex(row - 1,column - 1).connectLane(5);
 									} else {
-										main.getHexagons()[row - 1][column].connectLane(5);
+										main.getMap().getHex(row - 1,column).connectLane(5);
 									}
 									break;
 								case 3:
-									if (row % 2 == 0 ^ !main.isIndent_odd()) {
-										main.getHexagons()[row - 1][column].connectLane(0);
+									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+										main.getMap().getHex(row - 1,column).connectLane(0);
 									} else {
-										main.getHexagons()[row - 1][column + 1].connectLane(0);
+										main.getMap().getHex(row - 1,column + 1).connectLane(0);
 									}
 									break;
 								case 4:
-									main.getHexagons()[row][column + 1].connectLane(1);
+									main.getMap().getHex(row,column + 1).connectLane(1);
 									break;
 								case 5:
-									if (row % 2 == 0 ^ !main.isIndent_odd()) {
-										main.getHexagons()[row + 1][column].connectLane(2);
+									if (row % 2 == 0 ^ !main.getMap().isIndentOdd()) {
+										main.getMap().getHex(row + 1,column).connectLane(2);
 									} else {
-										main.getHexagons()[row + 1][column + 1].connectLane(2);
+										main.getMap().getHex(row + 1,column + 1).connectLane(2);
 									}
 									break;
 							}
@@ -181,12 +181,12 @@ public class Hexagon implements Constants {
 	}
 
 	// zeichnet das Hexagon
-	public void draw() {
+	public void render() {
 		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
-		float y = HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT - main.getAnimation_offset();
+		float y = HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT - main.getMap().getAnimationOffset();
 
 		// Jede zweite Reihe wird eingeschoben
-		if (main.isIndent_odd() ^ row % 2 == 0) {
+		if (main.getMap().isIndentOdd() ^ row % 2 == 0) {
 			x += HEX_WIDTH;
 		}
 
