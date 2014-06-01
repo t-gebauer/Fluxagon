@@ -4,6 +4,7 @@
  */
 package fluxagon;
 
+import java.util.Random;
 import static org.lwjgl.opengl.GL11.*;
 
 /**
@@ -86,6 +87,42 @@ public class Hexagon implements Constants {
 
 	private void connectLane(HexSide side) {
 		connectLane(side.ordinal());
+	}
+
+	private void createLane(HexSide side) {
+		if (lanes[side.ordinal()] == null) {
+			lanes[side.ordinal()] = new Lane();
+		}
+	}
+
+	public int createWay(HexSide source, Random random) {
+		if (source != null) {
+			createLane(source);
+		}
+		if (row == ROW_COUNT - 1) {
+			return column;
+		}
+		Hexagon hex = null;
+		HexSide side = null;
+		// Vorsicht! Endlosschleife möglich
+		do {
+			if (random.nextDouble() < 0.25) {
+				side = HexSide.LEFT_MID;
+			} else if (random.nextDouble() < 0.5) {
+				side = HexSide.RIGHT_MID;
+			} else if (random.nextDouble() < 0.75) {
+				side = HexSide.LEFT_BOTTOM;
+			} else {
+				side = HexSide.RIGHT_BOTTOM;
+			}
+			hex = main.getMap().getHexRel(row, column, side);
+		} while (hex == null);
+		// Eigenen Weg erstellen
+		createLane(side);
+		// Verdrehen
+		rotation += random.nextInt(6) * 60;
+		goalRotation = rotation;
+		return hex.createWay(side.opposite(), random);
 	}
 
 	/**

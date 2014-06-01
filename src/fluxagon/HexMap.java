@@ -4,6 +4,8 @@
  */
 package fluxagon;
 
+import java.util.Random;
+
 /**
  *
  * @author Timo
@@ -15,15 +17,24 @@ public class HexMap implements Constants {
 	private boolean indentOdd = false;
 	private Hexagon[][] hexagons;
 	private Fluxagon main;
+	/** X-Position des Weges (in der letzten Zeile) */
+	private int wayColumn;
+	private Random random = new Random();
 
 	public HexMap(Fluxagon main) {
 		this.main = main;
+
+	}
+
+	public void init() {
 		hexagons = new Hexagon[ROW_COUNT][COLUMN_COUNT];
 		for (int i = 1; i < ROW_COUNT; i++) {
 			for (int j = 0; j < COLUMN_COUNT; j++) {
 				hexagons[i][j] = new Hexagon(main, i, j);
 			}
 		}
+		wayColumn = hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2]
+				.createWay(null, random);
 		hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2].connect();
 	}
 
@@ -123,6 +134,7 @@ public class HexMap implements Constants {
 			for (int j = 0; j < COLUMN_COUNT; j++) {
 				hexagons[ROW_COUNT - 1][j] = new Hexagon(main, ROW_COUNT - 1, j);
 			}
+			wayColumn = hexagons[ROW_COUNT - 2][wayColumn].createWay(null, random);
 		}
 	}
 

@@ -35,23 +35,25 @@ interface Constants {
 	 * Seitenverhältnis des Fensters berechnet) */
 	public static final int ROW_COUNT =
 			Math.round((COLUMN_COUNT + 4) * 1.0f / WINDOW_WIDTH * WINDOW_HEIGHT) + 2;
-	public static final float HEX_OFFSET_PERCENT = 0.75f;
+	public static final float HEX_OFFSET_PERCENT = 0.5f;
+	/** halbe Breite des Hecagons; Abstand der Kanten */
 	public static final float HEX_WIDTH =
-			WINDOW_WIDTH / (COLUMN_COUNT * 2 + HEX_OFFSET_PERCENT * 4);
+			WINDOW_WIDTH / (COLUMN_COUNT * 2 + HEX_OFFSET_PERCENT * 6);
+	/** halbe Höhe des Hexagons; Abstand der Ecken */
 	public static final float HEX_HEIGHT =
 			HEX_WIDTH * 2 / (float) Math.sqrt(3);
 	public static final float HEX_OFFSET_X =
-			HEX_OFFSET_PERCENT * HEX_WIDTH;
+			HEX_OFFSET_PERCENT * HEX_WIDTH * 2;
 	public static final float HEX_OFFSET_Y =
-			HEX_OFFSET_PERCENT * HEX_HEIGHT;
+			HEX_OFFSET_PERCENT * HEX_HEIGHT * 2;
 	/** Wahrscheinlichkeit für das Entstehen einer Lane */
 	public static final float LANE_PROBABILITY = 0.4f;
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final float FLUX_SPEED = 0.03f;
+	public static final float FLUX_SPEED = 0.025f;
 	/** Scrollgeschwindigkeit der Map */
-	public static final double SCROLL_SPEED = 0.3;
+	public static final double SCROLL_SPEED = 0.35;
 	/** Farbdefinition für die Hexagone */
 	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
 	/** Farbdefinition für den Hintergrund der Lanes */
@@ -178,6 +180,7 @@ public class Fluxagon implements Constants {
 	 */
 	private void initGame() {
 		map = new HexMap(this);
+		map.init();
 		paused = false;
 		isOver = false;
 		score = 0;
