@@ -23,7 +23,6 @@ public class HexMap implements Constants {
 
 	public HexMap(Fluxagon main) {
 		this.main = main;
-
 	}
 
 	public void init() {
@@ -35,7 +34,7 @@ public class HexMap implements Constants {
 		}
 		wayColumn = hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2]
 				.createWay(null, random);
-		hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2].connect();
+		hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2].connectMid();
 	}
 
 	/**
@@ -120,7 +119,7 @@ public class HexMap implements Constants {
 	 * Bewegt die Map
 	 */
 	public void scroll() {
-		animationOffset += SCROLL_SPEED;
+		animationOffset += BASE_SCROLL_SPEED + main.getLevel() * LEVEL_SCROLL_SPEED;
 		if (animationOffset >= 1.5 * HEX_HEIGHT) {
 			animationOffset = 0;
 			indentOdd = !indentOdd;

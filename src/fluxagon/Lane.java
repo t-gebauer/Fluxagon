@@ -48,28 +48,26 @@ public class Lane {
 		return in + out;
 	}
 
-	public void incIn() {
-		incIn(Constants.FLUX_SPEED);
+	public void incIn(double amount) {
+		incIn((float) amount);
 	}
 
 	public void incIn(float amount) {
 		if (in + amount < 1) {
 			in += amount;
-		}
-		if (in + amount > 1) {
+		} else {
 			in = 1;
 		}
 	}
-	
-	public void incOut() {
-		incOut(Constants.FLUX_SPEED);
+
+	public void incOut(double amount) {
+		incOut((float) amount);
 	}
 
 	public void incOut(float amount) {
-		if (out < 1) {
+		if (out + amount < 1) {
 			out += amount;
-		}
-		if (out > 1) {
+		} else {
 			out = 1;
 		}
 	}

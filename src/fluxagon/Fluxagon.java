@@ -51,9 +51,13 @@ interface Constants {
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final float FLUX_SPEED = 0.025f;
+	public static final double BASE_FLUX_SPEED = 0.015;
+	public static final double LEVEL_FLUX_SPEED = 0.008;
+	//public static final float FLUX_SPEED = 0.025f;
 	/** Scrollgeschwindigkeit der Map */
-	public static final double SCROLL_SPEED = 0.35;
+	public static final double BASE_SCROLL_SPEED = 0.25;
+	public static final double LEVEL_SCROLL_SPEED = 0.1;
+	//public static final double SCROLL_SPEED = 0.35;
 	/** Farbdefinition für die Hexagone */
 	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
 	/** Farbdefinition für den Hintergrund der Lanes */
@@ -64,6 +68,13 @@ interface Constants {
 	public static final long UPDATE_TIME = 40;
 	/** Zeit bis zum Start des Spiels (in ms) */
 	public static final int STARTUP_TIME = 5000;
+	/** Punkte bis zum nächsten Level (Level * LEVEL_POINTS) */
+	public static final int LEVEL_POINTS = 600;
+	/** Maximales Level.<p>
+	 * Erreicht der Spieler MAX_LEVEL * LEVEL_POINTS Punkte, hat er gewonnen. */
+	public static final int MAX_LEVEL = 6;
+	/** Punkte pro verbundenes Feld */
+	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
 }
 
 public class Fluxagon implements Constants {
@@ -78,13 +89,14 @@ public class Fluxagon implements Constants {
 	private boolean capFPS = true;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
 	private boolean antiAlias = true;
-	private int score = 0;
-	private int oldScore = -1;
+	private double score = 0;
+	private double oldScore = -1;
 	private boolean running = true;
 	/** Anzahl der Sekunden bis zum Spielstart */
 	private long startingTime;
 	/** Schrift Objekt zum zeichnen von Text */
-	private TrueTypeFont font;
+	public TrueTypeFont standardFont;
+	public TrueTypeFont popupFont;
 	private HexMap map;
 	/** Boolean flag on whether the game is paused or not */
 	private boolean paused = false;
@@ -92,13 +104,22 @@ public class Fluxagon implements Constants {
 	private boolean isOver;
 	/** Boolean flag on whether circles or hexagons are drawn */
 	private boolean circleMode = false;
+	/** aktuelles Level */
+	private int level = 1;
+
+	public int getLevel() {
+		return level;
+	}
 
 	public HexMap getMap() {
 		return map;
 	}
 
-	public void incScore(int scr) {
+	public void incScore(double scr) {
 		score += scr;
+		if (score >= level * LEVEL_POINTS) {
+			level++;
+		}
 	}
 
 	/**
@@ -201,8 +222,12 @@ public class Fluxagon implements Constants {
 	 */
 	private void initResources() {
 		Display.setTitle("loading Resources");
+		
 		Font awtFont = new Font("Verdana", Font.BOLD, 20);
-		font = new TrueTypeFont(awtFont, antiAlias);
+		standardFont = new TrueTypeFont(awtFont, antiAlias);
+		awtFont = new Font("Verdana", Font.ITALIC, 15);
+		popupFont = new TrueTypeFont(awtFont, antiAlias);
+		
 		Display.setTitle(WINDOW_TITLE);
 	}
 
@@ -234,7 +259,7 @@ public class Fluxagon implements Constants {
 			}
 		}
 	}
-	
+
 	/**
 	 * Deal with keyboard input
 	 */
@@ -280,7 +305,7 @@ public class Fluxagon implements Constants {
 			}
 		}
 	}
-	
+
 	/**
 	 * Updates game-logic (25 times per second)
 	 */
@@ -290,6 +315,8 @@ public class Fluxagon implements Constants {
 			return;
 		}
 		lastUpdateTime += UPDATE_TIME;
+
+		TextPopup.moveAll();
 
 		if (!paused) {
 			if (startingTime > 0) {
@@ -326,7 +353,7 @@ public class Fluxagon implements Constants {
 
 		// render text
 		drawText(0, 0, "FPS: " + fps, Color.white, true, false);
-		drawText(0, 30, "Score: " + score, Color.white, true, false);
+		drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
 		if (startingTime > 0) {
 			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
 					"Starting in: " + (Math.round((float) startingTime / 1000)), Color.white,
@@ -339,6 +366,9 @@ public class Fluxagon implements Constants {
 		} else if (paused) {
 			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
 					"Paused", Color.white, true, true);
+		}
+		if (!isWaitingToStart()) {
+			TextPopup.renderAll(this);
 		}
 	}
 
@@ -354,6 +384,11 @@ public class Fluxagon implements Constants {
 	 * @param alignMid Gibt an, ob (x,y) der Mittelpunkt des Textes sein soll
 	 */
 	public void drawText(int x, int y, String text, Color color,
+			boolean background, boolean alignMid) {
+		drawText(standardFont, x, y, text, color, background, alignMid);
+	}
+	
+	public void drawText(TrueTypeFont font, int x, int y, String text, Color color,
 			boolean background, boolean alignMid) {
 		int width = font.getWidth(text);
 		int height = font.getHeight(text);

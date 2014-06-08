@@ -13,7 +13,6 @@ import static org.lwjgl.opengl.GL11.*;
  */
 public class Hexagon implements Constants {
 
-//	private Triangle[] lanes;
 	private Lane[] lanes;
 	private int row, column;
 	private boolean connected;
@@ -38,13 +37,44 @@ public class Hexagon implements Constants {
 			}
 		}
 	}
+	
+	private float getX() {
+		return HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
+	}
+	
+	private float getY() {
+		return HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT
+				- main.getMap().getAnimationOffset();
+	}
+
+	/**
+	 * vergibt Punkte anhand der Anzahlder Lanes auf dem Hexagon
+	 */
+	public void connect() {
+		if (!connected) {
+			connected = true;
+			// Lanes zählen
+			int laneCount = 0;
+			for (int i = 0; i < 6; i++) {
+				if (lanes[i] != null) {
+					laneCount++;
+				}
+			}
+			if (laneCount > 0) {
+				main.incScore(POINTS_PER_HEX[laneCount - 1]);
+				new TextPopup(getX(), getY(),
+						Integer.toString(POINTS_PER_HEX[laneCount - 1]));
+			}
+		}
+	}
 
 	/**
 	 * Verbindet das Hexagon "von innen"
 	 */
-	public void connect() {
-		connected = true;
-		for (int i = 0; i < 6; i++) {
+	public void connectMid() {
+		connect();
+		for (int i = 0;
+				i < 6; i++) {
 			if (lanes[i] != null) {
 				lanes[i].setOutConnected(true);
 			}
@@ -76,7 +106,7 @@ public class Hexagon implements Constants {
 		}
 		try {
 			if (lanes[num] != null) {
-				connected = true;
+				connect();
 				lanes[num].setInConnected(true);
 			}
 		} catch (ArrayIndexOutOfBoundsException e) {
@@ -137,20 +167,16 @@ public class Hexagon implements Constants {
 					continue;
 				}
 				if (l.isInConnected() && l.getInOut() < 1) {
-					main.incScore(1);
-					l.incIn();
+					main.incScore(0.03125);
+					l.incIn(BASE_FLUX_SPEED + main.getLevel() * LEVEL_FLUX_SPEED);
 					if (l.getIn() == 1) {
 						// alle anderen Triangles "infizieren"
-						for (int j = 0; j < 6; j++) {
-							if (lanes[j] != null && lanes[j].getInOut() < 1) {
-								lanes[j].setOutConnected(true);
-							}
-						}
+						connectMid();
 					}
 				}
 				if (l.isOutConnected() && l.getInOut() < 1) {
-					main.incScore(1);
-					l.incOut();
+					main.incScore(0.03125);
+					l.incOut(BASE_FLUX_SPEED + main.getLevel() * LEVEL_FLUX_SPEED);
 					if (l.getOut() == 1) {
 						int num = (i + Math.round(goalRotation / 60)) % 6;
 						if (num < 0) {
@@ -225,8 +251,8 @@ public class Hexagon implements Constants {
 	 * Zeichnen des Hexagons, sowie der dazugehörigen Lanes
 	 */
 	public void render() {
-		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
-		float y = HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT - main.getMap().getAnimationOffset();
+		float x = getX();
+		float y = getY();
 
 		// Jede zweite Reihe wird eingeschoben
 		if (main.getMap().isIndentOdd() ^ row % 2 == 0) {
@@ -256,12 +282,6 @@ public class Hexagon implements Constants {
 						(float) Math.cos(i * Math.PI / 3) * HEX_HEIGHT);
 			}
 		}
-		/*glVertex2f(0, 0 - HEX_HEIGHT);
-		 glVertex2f(0 - HEX_WIDTH, 0 - HEX_HEIGHT / 2f);
-		 glVertex2f(0 - HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
-		 glVertex2f(0, 0 + HEX_HEIGHT);
-		 glVertex2f(0 + HEX_WIDTH, 0 + HEX_HEIGHT / 2f);
-		 glVertex2f(0 + HEX_WIDTH, 0 - HEX_HEIGHT / 2f);*/
 		glEnd();
 
 		// Wege
