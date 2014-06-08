@@ -119,6 +119,7 @@ public class Fluxagon implements Constants {
 		score += scr;
 		if (score >= level * LEVEL_POINTS) {
 			level++;
+			SoundPlayer.playSound(SoundPlayer.LEVEL_UP);
 		}
 	}
 
@@ -222,12 +223,15 @@ public class Fluxagon implements Constants {
 	 */
 	private void initResources() {
 		Display.setTitle("loading Resources");
-		
+
 		Font awtFont = new Font("Verdana", Font.BOLD, 20);
 		standardFont = new TrueTypeFont(awtFont, antiAlias);
 		awtFont = new Font("Verdana", Font.ITALIC, 15);
 		popupFont = new TrueTypeFont(awtFont, antiAlias);
-		
+
+		// init openAL
+		SoundPlayer.init();
+
 		Display.setTitle(WINDOW_TITLE);
 	}
 
@@ -274,8 +278,10 @@ public class Fluxagon implements Constants {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
 					initGame();
-				} else if (Keyboard.getEventKey() == Keyboard.KEY_M) {
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_C) {
 					circleMode = circleMode ? false : true;
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_M) {
+					SoundPlayer.toggleMute();
 				}
 			} else {
 				// Key Release
@@ -294,11 +300,13 @@ public class Fluxagon implements Constants {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCW();
+							SoundPlayer.playSound(SoundPlayer.CLICK);
 						}
 					} else if (Mouse.getEventButton() == 1) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCCW();
+							SoundPlayer.playSound(SoundPlayer.CLICK);
 						}
 					}
 				}
@@ -320,6 +328,10 @@ public class Fluxagon implements Constants {
 
 		if (!paused) {
 			if (startingTime > 0) {
+				// jede Sekunde Sound abspielen
+				if ((startingTime) / 1000 != (startingTime - UPDATE_TIME) / 1000) {
+					SoundPlayer.playSound(SoundPlayer.COUNTDOWN);
+				}
 				startingTime -= UPDATE_TIME;
 				updateTitle();
 			} else {
@@ -331,6 +343,9 @@ public class Fluxagon implements Constants {
 				// Spiel verloren?
 				// tritt leider manchmal einfach so ein
 				if (score == oldScore) {
+					if (!isOver) {
+						SoundPlayer.playSound(SoundPlayer.GAME_OVER);
+					}
 					isOver = true;
 				}
 			}
@@ -356,7 +371,7 @@ public class Fluxagon implements Constants {
 		drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
 		if (startingTime > 0) {
 			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
-					"Starting in: " + (Math.round((float) startingTime / 1000)), Color.white,
+					"Starting in: " + ((int) Math.ceil((float) startingTime / 1000)), Color.white,
 					true, true);
 		}
 		// game over and pause messages
@@ -387,7 +402,7 @@ public class Fluxagon implements Constants {
 			boolean background, boolean alignMid) {
 		drawText(standardFont, x, y, text, color, background, alignMid);
 	}
-	
+
 	public void drawText(TrueTypeFont font, int x, int y, String text, Color color,
 			boolean background, boolean alignMid) {
 		int width = font.getWidth(text);
@@ -464,5 +479,6 @@ public class Fluxagon implements Constants {
 		Keyboard.destroy();
 		Mouse.destroy();
 		Display.destroy();
+		SoundPlayer.destroy();
 	}
 }
