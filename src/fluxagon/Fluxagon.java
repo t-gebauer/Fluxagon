@@ -87,16 +87,11 @@ public class Fluxagon implements Constants {
 	private long lastUpdateTime;
 	/** Boolean flag on whether are capped to 60 per second or not */
 	private boolean capFPS = true;
-	/** Boolean flag on whether AntiAliasing is enabled or not */
-	private boolean antiAlias = true;
 	private double score = 0;
 	private double oldScore = -1;
 	private boolean running = true;
 	/** Anzahl der Sekunden bis zum Spielstart */
 	private long startingTime;
-	/** Schrift Objekt zum zeichnen von Text */
-	public TrueTypeFont standardFont;
-	public TrueTypeFont popupFont;
 	private HexMap map;
 	/** Boolean flag on whether the game is paused or not */
 	private boolean paused = false;
@@ -140,18 +135,22 @@ public class Fluxagon implements Constants {
 				"org.lwjgl.librarypath", new File("native/windows").getAbsolutePath());
 
 		Fluxagon flux = new Fluxagon();
+
+		flux.init();
+		flux.run();
+
+		flux.destroy();
+	}
+
+	private void init() {
 		try {
-			flux.initGL();
+			initGL();
 		} catch (LWJGLException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
-
-		flux.initResources();
-		flux.initGame();
-		flux.run();
-
-		flux.destroy();
+		initResources();
+		initGame();
 	}
 
 	/**
@@ -224,10 +223,8 @@ public class Fluxagon implements Constants {
 	private void initResources() {
 		Display.setTitle("loading Resources");
 
-		Font awtFont = new Font("Verdana", Font.BOLD, 20);
-		standardFont = new TrueTypeFont(awtFont, antiAlias);
-		awtFont = new Font("Verdana", Font.ITALIC, 15);
-		popupFont = new TrueTypeFont(awtFont, antiAlias);
+		// init renderer-helper-class
+		Renderer.init();
 
 		// init openAL
 		SoundPlayer.init();
@@ -341,7 +338,6 @@ public class Fluxagon implements Constants {
 				map.update();
 
 				// Spiel verloren?
-				// tritt leider manchmal einfach so ein
 				if (score == oldScore) {
 					if (!isOver) {
 						SoundPlayer.playSound(SoundPlayer.GAME_OVER);
@@ -353,93 +349,34 @@ public class Fluxagon implements Constants {
 		map.animate();
 	}
 
-	public void appendColor(double[] color) {
-		appendColor(color, 1);
-	}
-
-	public void appendColor(double[] color, double brightness) {
-		glColor3d(brightness * color[0], brightness * color[1], brightness * color[2]);
-	}
-
 	private void render() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_TEXTURE_2D);
 		map.render();
 
 		// render text
-		drawText(0, 0, "FPS: " + fps, Color.white, true, false);
-		drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
+		// fps
+		Renderer.drawText(0, 0, "FPS: " + fps, Color.white, true, false);
+		// score
+		Renderer.drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
+		// startup time
 		if (startingTime > 0) {
-			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
+			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
 					"Starting in: " + ((int) Math.ceil((float) startingTime / 1000)), Color.white,
 					true, true);
 		}
 		// game over and pause messages
 		if (isOver) {
-			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
 					"Game over :/", Color.white, true, true);
 		} else if (paused) {
-			drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
 					"Paused", Color.white, true, true);
 		}
+		// score popups
 		if (!isWaitingToStart()) {
 			TextPopup.renderAll(this);
 		}
-	}
-
-	/**
-	 * Zeichnet einen Text
-	 *
-	 * @param x Position der linken oberen Ecke
-	 * @param y Position der linken oberen Ecke
-	 * @param text Der Text
-	 * @param color Die Farbe des Textes
-	 * @param background Gibt an, ob ein rechteckiger Hintergrund gezeichnet
-	 * werden soll
-	 * @param alignMid Gibt an, ob (x,y) der Mittelpunkt des Textes sein soll
-	 */
-	public void drawText(int x, int y, String text, Color color,
-			boolean background, boolean alignMid) {
-		drawText(standardFont, x, y, text, color, background, alignMid);
-	}
-
-	public void drawText(TrueTypeFont font, int x, int y, String text, Color color,
-			boolean background, boolean alignMid) {
-		int width = font.getWidth(text);
-		int height = font.getHeight(text);
-		if (alignMid) {
-			x -= width / 2;
-			y -= height / 2;
-		}
-		glPushMatrix();
-		glLoadIdentity();
-		glTranslatef(x, y, 0);
-		if (background) {
-			glColor4d(0.4, 0.4, 0.4, 0.4);
-			// Hintergrund zeichnen
-			drawQuad(width, height);
-		}
-		// Text zeichnen
-		glEnable(GL_TEXTURE_2D);
-		font.drawString(4, 0, text, color);
-		glPopMatrix();
-	}
-
-	/**
-	 * Zeichnet ein Viereck mit der linken oberen Ecke im aktuellen Koordinaten-
-	 * Ursprung
-	 *
-	 * @param width Weite des Rechtecks
-	 * @param height Höhe des Rechtecks
-	 */
-	public void drawQuad(int width, int height) {
-		glDisable(GL_TEXTURE_2D);
-		glBegin(GL_QUADS);
-		glVertex2i(0, 0);
-		glVertex2i(0, height + 2);
-		glVertex2i(width + 6, height + 2);
-		glVertex2i(width + 6, 0);
-		glEnd();
 	}
 
 	/**

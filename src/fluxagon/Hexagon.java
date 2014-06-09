@@ -37,11 +37,11 @@ public class Hexagon implements Constants {
 			}
 		}
 	}
-	
+
 	private float getX() {
 		return HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
 	}
-	
+
 	private float getY() {
 		return HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT
 				- main.getMap().getAnimationOffset();
@@ -150,8 +150,11 @@ public class Hexagon implements Constants {
 		// Eigenen Weg erstellen
 		createLane(side);
 		// Verdrehen
-		rotation += random.nextInt(6) * 60;
-		goalRotation = rotation;
+		// solange es nicht um das Start-Hexagon geht
+		if (!(row == ROW_COUNT / 4 && column == COLUMN_COUNT / 2)) {
+			rotation += random.nextInt(6) * 60;
+			goalRotation = rotation;
+		}
 		return hex.createWay(side.opposite(), random);
 	}
 
@@ -259,7 +262,7 @@ public class Hexagon implements Constants {
 			x += HEX_WIDTH;
 		}
 
-		main.appendColor(COLOR_HEXAGON, brightness);
+		Renderer.appendColor(COLOR_HEXAGON, brightness);
 
 		glLoadIdentity();
 		if (rotation != goalRotation) {
@@ -356,10 +359,10 @@ public class Hexagon implements Constants {
 	private void drawLineBackgroundAndPercents(float x, float y, float dx, float dy,
 			float pc1, float pc2) {
 		// background
-		main.appendColor(COLOR_LINE_BG);
+		Renderer.appendColor(COLOR_LINE_BG);
 		drawLine(x, y, dx, dy);
 		// gefüllte Linien
-		main.appendColor(COLOR_LINE_FG);
+		Renderer.appendColor(COLOR_LINE_FG);
 		if (pc1 > 0) {
 			// Linie von innen nach außen
 			drawPercentLine(x, y, dx, dy, pc1);

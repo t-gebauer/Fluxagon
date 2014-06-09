@@ -48,6 +48,6 @@ public class TextPopup {
 	}
 
 	private void render(Fluxagon flux) {
-		flux.drawText(flux.popupFont, Math.round(x), Math.round(y-offset), text, Color.yellow, false, true);
+		Renderer.drawText(Renderer.popupFont, Math.round(x), Math.round(y-offset), text, Color.yellow, false, true);
 	}
 }
