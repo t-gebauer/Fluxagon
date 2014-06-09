@@ -90,8 +90,10 @@ public class Fluxagon implements Constants {
 	private double score = 0;
 	private double oldScore = -1;
 	private boolean running = true;
-	/** Anzahl der Sekunden bis zum Spielstart */
-	private long startingTime;
+	/** Zeitpunkt des Spielstarts in ms */
+	private long startTime;
+	/** Zeitpunkt des Spielendes in ms */
+	private long stopTime;
 	private HexMap map;
 	/** Boolean flag on whether the game is paused or not */
 	private boolean paused = false;
@@ -123,7 +125,7 @@ public class Fluxagon implements Constants {
 	 * @return if startup time is not over
 	 */
 	public boolean isWaitingToStart() {
-		return startingTime > 0;
+		return getTime() < startTime;
 	}
 
 	/**
@@ -205,7 +207,8 @@ public class Fluxagon implements Constants {
 		paused = false;
 		isOver = false;
 		score = 0;
-		startingTime = STARTUP_TIME;
+		level = 1;
+		startTime = getTime() + STARTUP_TIME;
 	}
 
 	/**
@@ -324,12 +327,11 @@ public class Fluxagon implements Constants {
 		TextPopup.moveAll();
 
 		if (!paused) {
-			if (startingTime > 0) {
+			if (isWaitingToStart()) {
 				// jede Sekunde Sound abspielen
-				if ((startingTime) / 1000 != (startingTime - UPDATE_TIME) / 1000) {
+				if ((startTime - getTime()) / 1000 != (startTime - getTime() - UPDATE_TIME) / 1000) {
 					SoundPlayer.playSound(SoundPlayer.COUNTDOWN);
 				}
-				startingTime -= UPDATE_TIME;
 				updateTitle();
 			} else {
 				oldScore = score;
@@ -341,8 +343,10 @@ public class Fluxagon implements Constants {
 				if (score == oldScore) {
 					if (!isOver) {
 						SoundPlayer.playSound(SoundPlayer.GAME_OVER);
+						stopTime = getTime();
+						isOver = true;
 					}
-					isOver = true;
+
 				}
 			}
 		}
@@ -356,15 +360,26 @@ public class Fluxagon implements Constants {
 
 		// render text
 		// fps
-		Renderer.drawText(0, 0, "FPS: " + fps, Color.white, true, false);
+		Renderer.drawText(WINDOW_WIDTH - 120, 0, "FPS: " + fps, Color.white, true, false);
+
+		// startup time
+		if (startTime - getTime() > 0) {
+			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
+					"Starting in: " + ((int) Math.ceil((float) (startTime - getTime()) / 1000)), Color.white,
+					true, true);
+		} else {
+			// game time
+			if (!isOver) {
+				Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + (getTime() - startTime) / 1000, Color.white, true, false);
+			} else {
+				Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + (stopTime - startTime) / 1000, Color.white, true, false);
+			}
+		}
+		// level
+		Renderer.drawText(0, 0, "Level: " + level, Color.white, true, false);
 		// score
 		Renderer.drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
-		// startup time
-		if (startingTime > 0) {
-			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
-					"Starting in: " + ((int) Math.ceil((float) startingTime / 1000)), Color.white,
-					true, true);
-		}
+
 		// game over and pause messages
 		if (isOver) {
 			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
