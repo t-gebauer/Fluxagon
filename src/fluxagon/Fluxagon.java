@@ -4,7 +4,6 @@
  */
 package fluxagon;
 
-import java.awt.Font;
 import java.io.File;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -15,67 +14,11 @@ import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.PixelFormat;
 import org.newdawn.slick.Color;
-import org.newdawn.slick.TrueTypeFont;
 
 /**
  *
  * @author Timo
  */
-interface Constants {
-
-	/** Die Breite des Fensters */
-	public static final int WINDOW_WIDTH = 600;
-	/** Die Höhe des Fensters */
-	public static final int WINDOW_HEIGHT = 600;
-	/** Der Titel des Fensters */
-	public static final String WINDOW_TITLE = "Fluxagon";
-	/** Anzahl der horizontalen Spalten */
-	public static final int COLUMN_COUNT = 7;
-	/** Anzahl der Reihen (wird irgendwie aus der Anzahl der Spalten und dem
-	 * Seitenverhältnis des Fensters berechnet) */
-	public static final int ROW_COUNT =
-			Math.round((COLUMN_COUNT + 4) * 1.0f / WINDOW_WIDTH * WINDOW_HEIGHT) + 2;
-	public static final float HEX_OFFSET_PERCENT = 0.5f;
-	/** halbe Breite des Hecagons; Abstand der Kanten */
-	public static final float HEX_WIDTH =
-			WINDOW_WIDTH / (COLUMN_COUNT * 2 + HEX_OFFSET_PERCENT * 6);
-	/** halbe Höhe des Hexagons; Abstand der Ecken */
-	public static final float HEX_HEIGHT =
-			HEX_WIDTH * 2 / (float) Math.sqrt(3);
-	public static final float HEX_OFFSET_X =
-			HEX_OFFSET_PERCENT * HEX_WIDTH * 2;
-	public static final float HEX_OFFSET_Y =
-			HEX_OFFSET_PERCENT * HEX_HEIGHT * 2;
-	/** Wahrscheinlichkeit für das Entstehen einer Lane */
-	public static final float LANE_PROBABILITY = 0.4f;
-	/** Drehweite der Hexagone pro Animationsdurchlauf */
-	public static final float HEX_ROTATION_DIST = 15;
-	/** Flussgeschwindigkeit */
-	public static final double BASE_FLUX_SPEED = 0.015;
-	public static final double LEVEL_FLUX_SPEED = 0.008;
-	//public static final float FLUX_SPEED = 0.025f;
-	/** Scrollgeschwindigkeit der Map */
-	public static final double BASE_SCROLL_SPEED = 0.25;
-	public static final double LEVEL_SCROLL_SPEED = 0.1;
-	//public static final double SCROLL_SPEED = 0.35;
-	/** Farbdefinition für die Hexagone */
-	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
-	/** Farbdefinition für den Hintergrund der Lanes */
-	public static final double[] COLOR_LINE_BG = {0.4, 0.4, 0.4};
-	/** Farbdefinition für den Vordergrund der Lanes */
-	public static final double[] COLOR_LINE_FG = {0, 0.8, 0.1};
-	/** Zeit zwischen zwei Update-Durchgängen */
-	public static final long UPDATE_TIME = 40;
-	/** Zeit bis zum Start des Spiels (in ms) */
-	public static final int STARTUP_TIME = 5000;
-	/** Punkte bis zum nächsten Level (Level * LEVEL_POINTS) */
-	public static final int LEVEL_POINTS = 600;
-	/** Maximales Level.<p>
-	 * Erreicht der Spieler MAX_LEVEL * LEVEL_POINTS Punkte, hat er gewonnen. */
-	public static final int MAX_LEVEL = 6;
-	/** Punkte pro verbundenes Feld */
-	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
-}
 
 public class Fluxagon implements Constants {
 
@@ -103,7 +46,7 @@ public class Fluxagon implements Constants {
 	private boolean circleMode = false;
 	/** aktuelles Level */
 	private int level = 1;
-
+	
 	public int getLevel() {
 		return level;
 	}
@@ -241,7 +184,7 @@ public class Fluxagon implements Constants {
 	private void run() {
 		lastFpsTime = getTime();
 		lastUpdateTime = getTime();
-		while (running && !Display.isCloseRequested() && !Keyboard.isKeyDown(Keyboard.KEY_ESCAPE)) {
+		while (running && !Display.isCloseRequested()) {
 			if (Display.isVisible()) {
 				processKeyboard();
 				processMouse();
@@ -274,6 +217,8 @@ public class Fluxagon implements Constants {
 					if (!isOver) {
 						paused = paused ? false : true;
 					}
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
+					running = false;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
@@ -295,14 +240,16 @@ public class Fluxagon implements Constants {
 	private void processMouse() {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
-				if (!paused && !isOver) {
-					if (Mouse.getEventButton() == 0) {
+				if (Mouse.getEventButton() == 0) {
+					if (!paused && !isOver) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCW();
 							SoundPlayer.playSound(SoundPlayer.CLICK);
 						}
-					} else if (Mouse.getEventButton() == 1) {
+					}
+				} else if (Mouse.getEventButton() == 1) {
+					if (!paused && !isOver) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCCW();

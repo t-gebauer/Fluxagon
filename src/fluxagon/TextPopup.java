@@ -13,8 +13,8 @@ import org.newdawn.slick.Color;
  */
 public class TextPopup {
 
-	private static final float MAX_OFFSET = 15;
-	private static final float OFFSET_INC = 0.5f;
+	private static final float MAX_OFFSET = 30;
+	private static final float OFFSET_INC = 1;
 	private String text;
 	private float offset;
 	private float x;

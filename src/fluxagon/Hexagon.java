@@ -39,7 +39,12 @@ public class Hexagon implements Constants {
 	}
 
 	private float getX() {
-		return HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
+		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
+				// Jede zweite Reihe wird eingeschoben
+		if (main.getMap().isIndentOdd() ^ row % 2 == 0) {
+			x += HEX_WIDTH;
+		}
+		return x;
 	}
 
 	private float getY() {
@@ -256,11 +261,6 @@ public class Hexagon implements Constants {
 	public void render() {
 		float x = getX();
 		float y = getY();
-
-		// Jede zweite Reihe wird eingeschoben
-		if (main.getMap().isIndentOdd() ^ row % 2 == 0) {
-			x += HEX_WIDTH;
-		}
 
 		Renderer.appendColor(COLOR_HEXAGON, brightness);
 

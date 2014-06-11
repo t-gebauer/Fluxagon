@@ -54,14 +54,24 @@ public class Renderer {
 
 	public static void drawText(TrueTypeFont font, int x, int y, String text, Color color,
 			boolean background, boolean alignMid) {
+		glPushMatrix();
+		glLoadIdentity();
+		glTranslatef(x, y, 0);
+		drawText(font, text, color, background, alignMid);
+		glPopMatrix();
+	}
+	
+	public static void drawText(TrueTypeFont font, String text, Color color,
+			boolean background, boolean alignMid) {
 		int width = font.getWidth(text);
 		int height = font.getHeight(text);
+		int x = 0;
+		int y = 0;
 		if (alignMid) {
 			x -= width / 2;
 			y -= height / 2;
 		}
 		glPushMatrix();
-		glLoadIdentity();
 		glTranslatef(x, y, 0);
 		if (background) {
 			glColor4d(0.4, 0.4, 0.4, 0.4);
@@ -69,8 +79,14 @@ public class Renderer {
 			drawQuad(width, height);
 		}
 		// Text zeichnen
-		glEnable(GL_TEXTURE_2D);
-		font.drawString(4, 0, text, color);
+		boolean glTexEnabled = glIsEnabled(GL_TEXTURE_2D);
+		if (!glTexEnabled) {
+			glEnable(GL_TEXTURE_2D);
+		}
+		font.drawString(0, 0, text, color);
+		if (!glTexEnabled) {
+			glDisable(GL_TEXTURE_2D);
+		}
 		glPopMatrix();
 	}
 
@@ -84,12 +100,10 @@ public class Renderer {
 	public static void drawQuad(int width, int height) {
 		glDisable(GL_TEXTURE_2D);
 		glBegin(GL_QUADS);
-		glVertex2i(0, 0);
-		glVertex2i(0, height + 2);
-		glVertex2i(width + 6, height + 2);
-		glVertex2i(width + 6, 0);
+		glVertex2i(-4, 0);
+		glVertex2i(-4, height + 2);
+		glVertex2i(width + 4, height + 2);
+		glVertex2i(width + 4, 0);
 		glEnd();
 	}
-	
-	
 }
