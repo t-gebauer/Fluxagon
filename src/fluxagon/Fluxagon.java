@@ -59,7 +59,7 @@ public class Fluxagon implements Constants {
 		score += scr;
 		if (score >= level * LEVEL_POINTS) {
 			level++;
-			SoundPlayer.playSound(SoundPlayer.LEVEL_UP);
+			SoundPlayer.playSound(SOUND_LEVEL_UP);
 		}
 	}
 
@@ -173,7 +173,7 @@ public class Fluxagon implements Constants {
 		Renderer.init();
 
 		// init openAL
-		SoundPlayer.init();
+		SoundPlayer.init(SOUND_FILE_NAMES);
 
 		Display.setTitle(WINDOW_TITLE);
 	}
@@ -245,7 +245,7 @@ public class Fluxagon implements Constants {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCW();
-							SoundPlayer.playSound(SoundPlayer.CLICK);
+							SoundPlayer.playSound(SOUND_CLICK);
 						}
 					}
 				} else if (Mouse.getEventButton() == 1) {
@@ -253,7 +253,7 @@ public class Fluxagon implements Constants {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null) {
 							hex.rotateCCW();
-							SoundPlayer.playSound(SoundPlayer.CLICK);
+							SoundPlayer.playSound(SOUND_CLICK);
 						}
 					}
 				}
@@ -277,7 +277,7 @@ public class Fluxagon implements Constants {
 			if (isWaitingToStart()) {
 				// jede Sekunde Sound abspielen
 				if ((startTime - getTime()) / 1000 != (startTime - getTime() - UPDATE_TIME) / 1000) {
-					SoundPlayer.playSound(SoundPlayer.COUNTDOWN);
+					SoundPlayer.playSound(SOUND_COUNTDOWN);
 				}
 				updateTitle();
 			} else {
@@ -289,7 +289,7 @@ public class Fluxagon implements Constants {
 				// Spiel verloren?
 				if (score == oldScore) {
 					if (!isOver) {
-						SoundPlayer.playSound(SoundPlayer.GAME_OVER);
+						SoundPlayer.playSound(SOUND_GAME_OVER);
 						stopTime = getTime();
 						isOver = true;
 					}

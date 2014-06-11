@@ -9,6 +9,7 @@ package fluxagon;
  * @author Timo
  */
 public interface Constants {
+
 	/** Die Breite des Fensters */
 	public static final int WINDOW_WIDTH = 600;
 	/** Die Höhe des Fensters */
@@ -61,4 +62,10 @@ public interface Constants {
 	public static final int MAX_LEVEL = 6;
 	/** Punkte pro verbundenes Feld */
 	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
+	public static final int SOUND_CLICK = 0;
+	public static final int SOUND_COUNTDOWN = 1;
+	public static final int SOUND_GAME_OVER = 2;
+	public static final int SOUND_LEVEL_UP = 3;
+	public static final String[] SOUND_FILE_NAMES = {"rotate.wav",
+		"countdown.wav", "game over0.wav", "level up2.wav"};
 }

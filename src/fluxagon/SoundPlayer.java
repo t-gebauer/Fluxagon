@@ -19,15 +19,10 @@ import org.lwjgl.util.WaveData;
  */
 public class SoundPlayer {
 
-	public static final int CLICK = 0;
-	public static final int COUNTDOWN = 1;
-	public static final int GAME_OVER = 2;
-	public static final int LEVEL_UP = 3;
-	private static final String SOUND_FILE_NAMES[] = {"rotate.wav", "countdown.wav", "game over0.wav", "level up2.wav"};
 	/** Buffers hold sound data. */
-	private static IntBuffer buffer = BufferUtils.createIntBuffer(SOUND_FILE_NAMES.length);
+	private static IntBuffer buffer;
 	/** Sources are points emitting sound. */
-	private static IntBuffer source = BufferUtils.createIntBuffer(SOUND_FILE_NAMES.length);
+	private static IntBuffer source;
 	/** Position of the source sound. */
 	private static FloatBuffer sourcePos =
 			(FloatBuffer) BufferUtils.createFloatBuffer(3).
@@ -49,37 +44,40 @@ public class SoundPlayer {
 	private static FloatBuffer listenerOri =
 			(FloatBuffer) BufferUtils.createFloatBuffer(6).
 			put(new float[]{0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f}).rewind();
-	
 	private static boolean muted = false;
-	
+
 	public static void toggleMute() {
 		muted = muted ? false : true;
 	}
 
-	public static void init() {
+	public static void init(String[] files) {
 		// Initialize OpenAL and clear the error bit.
-		try {
-			AL.create();
-		} catch (LWJGLException le) {
-			le.printStackTrace();
-			return;
+		if (!AL.isCreated()) {
+			try {
+				AL.create();
+			} catch (LWJGLException e) {
+				e.printStackTrace();
+				return;
+			}
 		}
 		AL10.alGetError();
 
 		// Generate Source Buffer
+		source = BufferUtils.createIntBuffer(files.length);
 		AL10.alGenSources(source);
 
 		// Load wav data into a buffer.
+		buffer = BufferUtils.createIntBuffer(files.length);
 		AL10.alGenBuffers(buffer);
 
 		if (AL10.alGetError() != AL10.AL_NO_ERROR) {
 			//return AL10.AL_FALSE;
 		}
 
-		for (int i = 0; i < SOUND_FILE_NAMES.length; i++) {
-			WaveData waveFile = WaveData.create("sounds/" + SOUND_FILE_NAMES[i]);
+		for (int i = 0; i < files.length; i++) {
+			WaveData waveFile = WaveData.create("sounds/" + files[i]);
 			if (waveFile == null) {
-				System.err.println("WaveFile not found: " + SOUND_FILE_NAMES[i]);
+				System.err.println("WaveFile not found: " + files[i]);
 				continue;
 			}
 			AL10.alBufferData(buffer.get(i), waveFile.format, waveFile.data, waveFile.samplerate);
