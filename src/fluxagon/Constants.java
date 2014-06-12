@@ -45,11 +45,11 @@ public interface Constants {
 	public static final double LEVEL_SCROLL_SPEED = 0.1;
 	/** Farbdefinitionen für die Hexagone */
 	public static final GlColor[] COLOR_HEXAGON = {
-		/* 0 */new GlColor(1, 0.6, 0.1),
-		/* 1 */ GlColor.from255(62, 116, 237),
-		/* 2 */ GlColor.from255(63, 174, 72),
-		/* 3 */ GlColor.from255(76, 160, 124),
-		/* 4 */ GlColor.from255(110, 58, 81)};
+		/* 0 orange */new GlColor(1, 0.6, 0.1),
+		/* 1 blau   */ GlColor.from255(62, 116, 237),
+		/* 2 grün   */ GlColor.from255(63, 174, 72),
+		/* 3 türkis */ GlColor.from255(76, 160, 124),
+		/* 4 magenta*/ GlColor.from255(110, 58, 81)};
 	/** Farbdefinition für den Vordergrund der Lanes */
 	public static final GlColor[] COLOR_LINE_FG = {
 		/* 0 */new GlColor(0, 0.8, 0.1),

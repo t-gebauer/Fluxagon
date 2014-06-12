@@ -5,7 +5,11 @@
 package fluxagon;
 
 import basicmenu.MenuItem;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import javax.imageio.ImageIO;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
@@ -15,6 +19,7 @@ import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.PixelFormat;
 import org.newdawn.slick.Color;
+import org.newdawn.slick.opengl.ImageIOImageData;
 
 /**
  *
@@ -80,6 +85,14 @@ public class Fluxagon implements Constants {
 		return level;
 	}
 
+	public int getTimeUntilStart() {
+		if (gameTime > 0) {
+			return 0;
+		} else {
+			return (int) -gameTime;
+		}
+	}
+
 	public HexMap getMap() {
 		return map;
 	}
@@ -140,6 +153,16 @@ public class Fluxagon implements Constants {
 		Display.setDisplayMode(new DisplayMode(WINDOW_WIDTH, WINDOW_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
+		BufferedImage icon16 = loadImage("icons/16x16.png");
+		BufferedImage icon32 = loadImage("icons/32x32.png");
+		BufferedImage icon128 = loadImage("icons/128x128.png");
+		if (icon16 != null && icon32 != null && icon128 != null) {
+			Display.setIcon(new ByteBuffer[]{
+				new ImageIOImageData().imageToByteBuffer(icon16, false, false, null),
+				new ImageIOImageData().imageToByteBuffer(icon32, false, false, null),
+				new ImageIOImageData().imageToByteBuffer(icon128, false, false, null)
+			});
+		}
 		Display.create(new PixelFormat().withSamples(8));
 
 		// Keyboard
@@ -171,6 +194,15 @@ public class Fluxagon implements Constants {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glClearColor(0.17f, 0.17f, 0.17f, 1);
+	}
+
+	private BufferedImage loadImage(String filename) {
+		try {
+			return ImageIO.read(new File(filename));
+		} catch (IOException e) {
+			System.err.println("Can't load file: " + filename);
+		}
+		return null;
 	}
 
 	/**
@@ -231,6 +263,7 @@ public class Fluxagon implements Constants {
 			@Override
 			public void click() {
 				initGame();
+				guiMain.setVisible(false);
 			}
 		};
 		item.setText("Restart");
@@ -406,6 +439,7 @@ public class Fluxagon implements Constants {
 		map.render();
 
 		// render text
+		glLoadIdentity();
 		// fps
 		Renderer.drawText(WINDOW_WIDTH - 120, 0, "FPS: " + fps, Color.white, true, false);
 
@@ -426,11 +460,17 @@ public class Fluxagon implements Constants {
 		// game over and pause messages
 		if (!guiMain.isVisible()) {
 			if (isOver) {
+				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
+				Renderer.drawQuad(WINDOW_WIDTH, 60);
+				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
 				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-						"Game over :/", Color.white, true, true);
+						"Game over :/", Color.white, false, true);
 			} else if (paused) {
+				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
+				Renderer.drawQuad(WINDOW_WIDTH, 60);
+				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
 				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-						"Paused", Color.white, true, true);
+						"Paused", Color.white, false, true);
 			}
 		}
 		// score popups

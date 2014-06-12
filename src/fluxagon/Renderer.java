@@ -20,20 +20,16 @@ public class Renderer {
 	public static TrueTypeFont popupFont;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
 	private static boolean antiAlias = true;
+	/** background Color */
+	private static GlColor backgroundColor = new GlColor(0.3, 0.3, 0.3, 0.5);
 
 	public static void init() {
+		System.out.println("Renderer -- Loading fonts");
 		Font awtFont = new Font("Verdana", Font.BOLD, 20);
 		standardFont = new TrueTypeFont(awtFont, antiAlias);
 		awtFont = new Font("Verdana", Font.ITALIC, 15);
 		popupFont = new TrueTypeFont(awtFont, antiAlias);
-	}
-
-	public static void appendColor(double[] color) {
-		appendColor(color, 1);
-	}
-
-	public static void appendColor(double[] color, double brightness) {
-		glColor3d(brightness * color[0], brightness * color[1], brightness * color[2]);
+		System.out.println("Renderer -- Finished");
 	}
 
 	/**
@@ -55,7 +51,6 @@ public class Renderer {
 	public static void drawText(TrueTypeFont font, int x, int y, String text, Color color,
 			boolean background, boolean alignMid) {
 		glPushMatrix();
-		glLoadIdentity();
 		glTranslatef(x, y, 0);
 		drawText(font, text, color, background, alignMid);
 		glPopMatrix();
@@ -74,7 +69,7 @@ public class Renderer {
 		glPushMatrix();
 		glTranslatef(x, y, 0);
 		if (background) {
-			glColor4d(0.4, 0.4, 0.4, 0.4);
+			backgroundColor.bind();
 			// Hintergrund zeichnen
 			drawQuad(width, height);
 		}
@@ -99,11 +94,12 @@ public class Renderer {
 	 */
 	public static void drawQuad(int width, int height) {
 		glDisable(GL_TEXTURE_2D);
+		backgroundColor.bind();
 		glBegin(GL_QUADS);
-		glVertex2i(-4, 0);
-		glVertex2i(-4, height + 2);
-		glVertex2i(width + 4, height + 2);
-		glVertex2i(width + 4, 0);
+		glVertex2i(0, 0);
+		glVertex2i(0, height);
+		glVertex2i(width, height);
+		glVertex2i(width, 0);
 		glEnd();
 	}
 }
