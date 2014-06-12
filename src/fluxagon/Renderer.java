@@ -15,62 +15,57 @@ import org.newdawn.slick.TrueTypeFont;
  */
 public class Renderer {
 
-	/** Schrift Objekt zum zeichnen von Text */
-	public static TrueTypeFont standardFont;
-	public static TrueTypeFont popupFont;
+	/** Schrift zum zeichnen von Text */
+	private static TrueTypeFont[] fonts;
+	private static int fontIndex = 0;
+	private static Color fontColor = Color.white;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
 	private static boolean antiAlias = true;
 	/** background Color */
 	private static GlColor backgroundColor = new GlColor(0.3, 0.3, 0.3, 0.5);
 
-	public static void init() {
+	public static void init(Font[] fonts) {
 		System.out.println("Renderer -- Loading fonts");
-		Font awtFont = new Font("Verdana", Font.BOLD, 20);
-		standardFont = new TrueTypeFont(awtFont, antiAlias);
-		awtFont = new Font("Verdana", Font.ITALIC, 15);
-		popupFont = new TrueTypeFont(awtFont, antiAlias);
+		Renderer.fonts = new TrueTypeFont[fonts.length];
+		for (int i = 0; i < fonts.length; i++) {
+			Renderer.fonts[i] = new TrueTypeFont(fonts[i], antiAlias);
+		}
 		System.out.println("Renderer -- Finished");
+	}
+
+	public static void setFont(int fontIndex) {
+		Renderer.fontIndex = fontIndex;
+	}
+
+	public static void setFontColor(Color fontColor) {
+		Renderer.fontColor = fontColor;
 	}
 
 	/**
 	 * Zeichnet einen Text
-	 *
-	 * @param x Position der linken oberen Ecke
-	 * @param y Position der linken oberen Ecke
-	 * @param text Der Text
-	 * @param color Die Farbe des Textes
-	 * @param background Gibt an, ob ein rechteckiger Hintergrund gezeichnet
-	 * werden soll
-	 * @param alignMid Gibt an, ob (x,y) der Mittelpunkt des Textes sein soll
 	 */
-	public static void drawText(int x, int y, String text, Color color,
-			boolean background, boolean alignMid) {
-		drawText(standardFont, x, y, text, color, background, alignMid);
+	public static void drawText(String text) {
+		drawText(text, false, false);
 	}
 
-	public static void drawText(TrueTypeFont font, int x, int y, String text, Color color,
-			boolean background, boolean alignMid) {
-		glPushMatrix();
-		glTranslatef(x, y, 0);
-		drawText(font, text, color, background, alignMid);
-		glPopMatrix();
+	public static void drawText(String text, boolean center) {
+		drawText(text, center, false);
 	}
-	
-	public static void drawText(TrueTypeFont font, String text, Color color,
-			boolean background, boolean alignMid) {
-		int width = font.getWidth(text);
-		int height = font.getHeight(text);
-		int x = 0;
-		int y = 0;
-		if (alignMid) {
+
+	public static void drawText(String text, boolean center, boolean background) {
+		int width = fonts[fontIndex].getWidth(text);
+		int height = fonts[fontIndex].getHeight(text);
+		if (center) {
+			int x = 0;
+			int y = 0;
 			x -= width / 2;
 			y -= height / 2;
+			glPushMatrix();
+			glTranslatef(x, y, 0);
 		}
-		glPushMatrix();
-		glTranslatef(x, y, 0);
+		// Hintergrund zeichnen
 		if (background) {
 			backgroundColor.bind();
-			// Hintergrund zeichnen
 			drawQuad(width, height);
 		}
 		// Text zeichnen
@@ -78,10 +73,28 @@ public class Renderer {
 		if (!glTexEnabled) {
 			glEnable(GL_TEXTURE_2D);
 		}
-		font.drawString(0, 0, text, color);
+		fonts[fontIndex].drawString(0, 0, text, fontColor);
 		if (!glTexEnabled) {
 			glDisable(GL_TEXTURE_2D);
 		}
+		if (center) {
+			glPopMatrix();
+		}
+	}
+	
+	public static void drawText(String text, int x, int y) {
+		drawText(text, x, y, false, false);
+	}
+	
+	public static void drawText(String text, int x, int y, boolean center) {
+		drawText(text, x, y, center, false);
+	}
+
+	public static void drawText(String text, int x, int y, boolean center,
+			boolean background) {
+		glPushMatrix();
+		glTranslatef(x, y, 0);
+		drawText(text, center, background);
 		glPopMatrix();
 	}
 
@@ -93,7 +106,6 @@ public class Renderer {
 	 * @param height Höhe des Rechtecks
 	 */
 	public static void drawQuad(int width, int height) {
-		glDisable(GL_TEXTURE_2D);
 		backgroundColor.bind();
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);

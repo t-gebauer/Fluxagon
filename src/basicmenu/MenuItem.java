@@ -66,8 +66,7 @@ public class MenuItem {
 		GL11.glEnd();
 		if (text != null) {
 			GL11.glTranslatef(width / 2, height / 2, 0);
-			Renderer.drawText(Renderer.standardFont, text,
-					org.newdawn.slick.Color.white, false, true);
+			Renderer.drawText(text, true);
 		}
 	}
 

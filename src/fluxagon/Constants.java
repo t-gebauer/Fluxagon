@@ -4,6 +4,8 @@
  */
 package fluxagon;
 
+import java.awt.Font;
+
 /**
  *
  * @author Timo
@@ -67,6 +69,7 @@ public interface Constants {
 	public static final int LEVEL_POINTS = 600;
 	/** Punkte pro verbundenes Feld */
 	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
+	/** Sounds */
 	public static final int SOUND_CLICK = 0;
 	public static final int SOUND_COUNTDOWN = 1;
 	public static final int SOUND_COUNTDOWN_LAST = 2;
@@ -75,5 +78,13 @@ public interface Constants {
 	public static final String[] SOUND_FILE_NAMES = {"rotate.wav",
 		"countdown.wav", "countdown_last.wav", "game over1.wav",
 		"level up2.wav"};
+	/** Time to change color theme */
 	public static final int FADE_TIME = 1600;
+	/** Fonts */
+	public static final Font[] FONT_LIST = {
+		new Font("Verdana", Font.BOLD, 20),
+		new Font("Verdana", Font.ITALIC, 15)
+	};
+	public static final int FONT_STANDARD = 0;
+	public static final int FONT_POPUP = 1;
 }

@@ -18,7 +18,6 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.PixelFormat;
-import org.newdawn.slick.Color;
 import org.newdawn.slick.opengl.ImageIOImageData;
 
 /**
@@ -235,7 +234,7 @@ public class Fluxagon implements Constants {
 		Display.setTitle("loading Resources");
 
 		// init renderer-helper-class
-		Renderer.init();
+		Renderer.init(FONT_LIST);
 
 		// init openAL
 		SoundPlayer.init(SOUND_FILE_NAMES);
@@ -441,21 +440,21 @@ public class Fluxagon implements Constants {
 		// render text
 		glLoadIdentity();
 		// fps
-		Renderer.drawText(WINDOW_WIDTH - 120, 0, "FPS: " + fps, Color.white, true, false);
+		Renderer.drawText("FPS: " + fps, WINDOW_WIDTH - 120, 0, false, true);
 
 		// startup time
 		if (isWaitingToStart()) {
-			Renderer.drawText(WINDOW_WIDTH / 2, 20,
-					"Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)), Color.white,
-					true, true);
+			Renderer.drawText("Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)),
+					WINDOW_WIDTH / 2, 20, true, true);
 		} else {
 			// game time
-			Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + gameTime / 1000, Color.white, true, false);
+			Renderer.drawText("Zeit: " + gameTime / 1000, WINDOW_WIDTH - 120, 30,
+					false, true);
 		}
 		// level
-		Renderer.drawText(0, 0, "Level: " + level, Color.white, true, false);
+		Renderer.drawText("Level: " + level, false, true);
 		// score
-		Renderer.drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
+		Renderer.drawText("Score: " + (int) score, 0, 30, false, true);
 
 		// game over and pause messages
 		if (!guiMain.isVisible()) {
@@ -463,19 +462,19 @@ public class Fluxagon implements Constants {
 				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
 				Renderer.drawQuad(WINDOW_WIDTH, 60);
 				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
-				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-						"Game over :/", Color.white, false, true);
+				Renderer.drawText("Game over :/",
+						WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, true);
 			} else if (paused) {
 				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
 				Renderer.drawQuad(WINDOW_WIDTH, 60);
 				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
-				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-						"Paused", Color.white, false, true);
+				Renderer.drawText("Paused",
+						WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, true);
 			}
 		}
 		// score popups
 		if (!isWaitingToStart()) {
-			TextPopup.renderAll(this);
+			TextPopup.renderAll();
 		}
 
 		// Menu

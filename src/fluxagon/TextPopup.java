@@ -27,7 +27,7 @@ public class TextPopup {
 		this.y = y;
 		list.add(this);
 	}
-	
+
 	public static void moveAll() {
 		for (TextPopup textPopup : list) {
 			textPopup.move();
@@ -41,13 +41,17 @@ public class TextPopup {
 		}
 	}
 
-	public static void renderAll(Fluxagon flux) {
+	public static void renderAll() {
 		for (TextPopup textPopup : list) {
-			textPopup.render(flux);
+			textPopup.render();
 		}
 	}
 
-	private void render(Fluxagon flux) {
-		Renderer.drawText(Renderer.popupFont, Math.round(x), Math.round(y-offset), text, Color.yellow, false, true);
+	private void render() {
+		Renderer.setFont(Constants.FONT_POPUP);
+		Renderer.setFontColor(Color.yellow);
+		Renderer.drawText(text, Math.round(x), Math.round(y - offset), true);
+		Renderer.setFontColor(Color.white);
+		Renderer.setFont(0);
 	}
 }
