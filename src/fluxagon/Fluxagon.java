@@ -47,6 +47,34 @@ public class Fluxagon implements Constants {
 	/** GUI */
 	MenuItem guiRoot;
 	MenuItem guiMain;
+	private long fadeStartTime;
+	private int oldHexColorIndex;
+	private int hexColorIndex;
+
+	public void shuffleHexColor() {
+		oldHexColorIndex = hexColorIndex;
+		do {
+			hexColorIndex = (int) (Math.random() * COLOR_HEXAGON.length);
+		} while (hexColorIndex == oldHexColorIndex);
+		fadeStartTime = getTime();
+	}
+
+	public double getFadePercent() {
+		double prc = (double) (getTime() - fadeStartTime) / FADE_TIME;
+		if (prc < 1) {
+			return prc;
+		} else {
+			return 1;
+		}
+	}
+
+	public int getOldHexColorIndex() {
+		return oldHexColorIndex;
+	}
+
+	public int getHexColorIndex() {
+		return hexColorIndex;
+	}
 
 	public int getLevel() {
 		return level;
@@ -58,9 +86,11 @@ public class Fluxagon implements Constants {
 
 	public void incScore(double scr) {
 		score += scr;
+		// Level UP !
 		if (score >= level * LEVEL_POINTS) {
 			level++;
 			SoundPlayer.playSound(SOUND_LEVEL_UP);
+			shuffleHexColor();
 		}
 	}
 
@@ -110,7 +140,7 @@ public class Fluxagon implements Constants {
 		Display.setDisplayMode(new DisplayMode(WINDOW_WIDTH, WINDOW_HEIGHT));
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
-		Display.create(new PixelFormat());
+		Display.create(new PixelFormat().withSamples(8));
 
 		// Keyboard
 		Keyboard.create();
@@ -140,7 +170,7 @@ public class Fluxagon implements Constants {
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-		glClearColor(0, 0, 0, 1);
+		glClearColor(0.17f, 0.17f, 0.17f, 1);
 	}
 
 	/**
@@ -154,6 +184,7 @@ public class Fluxagon implements Constants {
 		score = 0;
 		level = 1;
 		gameTime = -STARTUP_TIME;
+		oldHexColorIndex = 0;
 	}
 
 	/**
@@ -182,10 +213,10 @@ public class Fluxagon implements Constants {
 
 	private void initMenu() {
 		guiRoot = new MenuItem(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
-		guiRoot.setBackgroundColor(new MenuItem.Color(0, 0, 0, 0));
+		guiRoot.setBackgroundColor(new GlColor(0, 0, 0, 0));
 		guiMain = new MenuItem(WINDOW_WIDTH / 3, WINDOW_HEIGHT / 4,
 				WINDOW_WIDTH / 3, WINDOW_HEIGHT / 2);
-		guiMain.setBackgroundColor(new MenuItem.Color(0, 0, 0, 0.8));
+		guiMain.setBackgroundColor(new GlColor(0, 0, 0, 0.8));
 		MenuItem item = new MenuItem(0, 30, WINDOW_WIDTH / 3, 40) {
 			@Override
 			public void click() {
@@ -193,7 +224,7 @@ public class Fluxagon implements Constants {
 			}
 		};
 		item.setText("Resume");
-		MenuItem.Color labelColor = new MenuItem.Color(0.3, 0.3, 0.3, 0);
+		GlColor labelColor = new GlColor(0.3, 0.3, 0.3, 0);
 		item.setBackgroundColor(labelColor);
 		guiMain.add(item);
 		item = new MenuItem(0, 100, WINDOW_WIDTH / 3, 40) {
@@ -307,7 +338,7 @@ public class Fluxagon implements Constants {
 					return;
 				}
 				if (Mouse.getEventButton() == 0) {
-					if (!paused && !isOver) {
+					if (!isGamePaused()) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCW();
@@ -315,7 +346,7 @@ public class Fluxagon implements Constants {
 						}
 					}
 				} else if (Mouse.getEventButton() == 1) {
-					if (!paused && !isOver) {
+					if (!isGamePaused()) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCCW();
@@ -407,7 +438,7 @@ public class Fluxagon implements Constants {
 			TextPopup.renderAll(this);
 		}
 
-		//Menu
+		// Menu
 		glLoadIdentity();
 		guiRoot.drawAll();
 	}

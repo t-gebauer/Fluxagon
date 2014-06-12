@@ -20,7 +20,6 @@ public class Hexagon implements Constants {
 	private Fluxagon main = null;
 	private float rotation; // momentane Rotation (in Grad)
 	private float goalRotation; // gewollte Rotation (in Grad)
-	private boolean flashing = false;
 
 	public Hexagon(Fluxagon main, int row, int column) {
 		this.main = main;
@@ -253,8 +252,10 @@ public class Hexagon implements Constants {
 
 		// Farbe leicht verändern
 		if (Math.random() > 0.5) {
+			if (brightness < 0.9)
 			brightness += 0.01;
 		} else {
+			if (brightness > 0.3)
 			brightness -= 0.01;
 		}
 	}
@@ -266,16 +267,22 @@ public class Hexagon implements Constants {
 		float x = getX();
 		float y = getY();
 
-		Renderer.appendColor(COLOR_HEXAGON, brightness);
-
+		// Farbe errechnen
+		COLOR_HEXAGON[main.getHexColorIndex()].
+				mult(main.getFadePercent()).
+				add(COLOR_HEXAGON[main.getOldHexColorIndex()].
+				mult(1-main.getFadePercent())).
+				mult(brightness).bind();
+		
+		// draw rotating hexagons in the background
 		glLoadIdentity();
 		if (rotation != goalRotation) {
 			glTranslatef(x, y, 1);
 		} else {
 			glTranslatef(x, y, 0);
 		}
-		glRotatef(rotation, 0, 0, 1);
-
+		
+		// draw hexagon (or Circle)
 		glBegin(GL_POLYGON);
 		if (main.getCircleMode()) {
 			glVertex2f(0, 0);
@@ -290,8 +297,11 @@ public class Hexagon implements Constants {
 			}
 		}
 		glEnd();
+		
+		// apply rotation only to lanes
+		glRotatef(rotation, 0, 0, 1);
 
-		// Wege
+		// Lanes
 		Lane l;
 		// left-bottom
 		l = lanes[0];
@@ -363,10 +373,12 @@ public class Hexagon implements Constants {
 	private void drawLineBackgroundAndPercents(float x, float y, float dx, float dy,
 			float pc1, float pc2) {
 		// background
-		Renderer.appendColor(COLOR_LINE_BG);
+		COLOR_LINE_BG.bind();
 		drawLine(x, y, dx, dy);
 		// gefüllte Linien
-		Renderer.appendColor(COLOR_LINE_FG);
+		COLOR_LINE_FG[main.getHexColorIndex()].mult(main.getFadePercent()).
+				add(COLOR_LINE_FG[main.getOldHexColorIndex()].
+				mult(1-main.getFadePercent())).bind();
 		if (pc1 > 0) {
 			// Linie von innen nach außen
 			drawPercentLine(x, y, dx, dy, pc1);

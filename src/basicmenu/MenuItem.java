@@ -4,6 +4,7 @@
  */
 package basicmenu;
 
+import fluxagon.GlColor;
 import fluxagon.Renderer;
 import java.util.ArrayList;
 import org.lwjgl.opengl.GL11;
@@ -18,8 +19,8 @@ public class MenuItem {
 	protected int left, top, width, height;
 	protected ArrayList<MenuItem> children;
 	protected int borderWidth = 0;
-	protected Color borderColor = new Color(1, 1, 1);
-	protected Color backgroundColor = new Color(0, 0, 0, 1);
+	protected GlColor borderColor = new GlColor(1, 1, 1);
+	protected GlColor backgroundColor = new GlColor(0, 0, 0, 1);
 	protected boolean visible = true;
 
 	public MenuItem(int left, int top, int width, int height) {
@@ -134,11 +135,11 @@ public class MenuItem {
 		}
 	}
 
-	public void setBorderColor(Color borderColor) {
+	public void setBorderColor(GlColor borderColor) {
 		this.borderColor = borderColor;
 	}
 
-	public void setBackgroundColor(Color backgroundColor) {
+	public void setBackgroundColor(GlColor backgroundColor) {
 		this.backgroundColor = backgroundColor;
 	}
 
@@ -148,28 +149,5 @@ public class MenuItem {
 
 	public boolean isVisible() {
 		return visible;
-	}
-
-	public static class Color {
-
-		public double r, g, b, a;
-
-		public Color(double r, double g, double b, double a) {
-			this.r = r;
-			this.g = g;
-			this.b = b;
-			this.a = a;
-		}
-
-		public Color(double r, double g, double b) {
-			this.r = r;
-			this.g = g;
-			this.b = b;
-			this.a = 1;
-		}
-
-		public void bind() {
-			GL11.glColor4d(r, r, b, a);
-		}
 	}
 }

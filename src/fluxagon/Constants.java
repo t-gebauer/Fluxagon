@@ -40,26 +40,31 @@ public interface Constants {
 	/** Flussgeschwindigkeit */
 	public static final double BASE_FLUX_SPEED = 0.015;
 	public static final double LEVEL_FLUX_SPEED = 0.008;
-	//public static final float FLUX_SPEED = 0.025f;
 	/** Scrollgeschwindigkeit der Map */
 	public static final double BASE_SCROLL_SPEED = 0.25;
 	public static final double LEVEL_SCROLL_SPEED = 0.1;
-	//public static final double SCROLL_SPEED = 0.35;
-	/** Farbdefinition für die Hexagone */
-	public static final double[] COLOR_HEXAGON = {1, 0.6, 0.1};
-	/** Farbdefinition für den Hintergrund der Lanes */
-	public static final double[] COLOR_LINE_BG = {0.4, 0.4, 0.4};
+	/** Farbdefinitionen für die Hexagone */
+	public static final GlColor[] COLOR_HEXAGON = {
+		/* 0 */new GlColor(1, 0.6, 0.1),
+		/* 1 */ GlColor.from255(62, 116, 237),
+		/* 2 */ GlColor.from255(63, 174, 72),
+		/* 3 */ GlColor.from255(76, 160, 124),
+		/* 4 */ GlColor.from255(110, 58, 81)};
 	/** Farbdefinition für den Vordergrund der Lanes */
-	public static final double[] COLOR_LINE_FG = {0, 0.8, 0.1};
+	public static final GlColor[] COLOR_LINE_FG = {
+		/* 0 */new GlColor(0, 0.8, 0.1),
+		/* 1 */ GlColor.from255(188, 0, 166),
+		/* 2 */ GlColor.from255(66, 88, 137),
+		/* 3 */ GlColor.from255(74, 62, 134),
+		/* 4 */ GlColor.from255(159, 177, 40)};
+	/** Farbdefinition für den Hintergrund der Lanes */
+	public static final GlColor COLOR_LINE_BG = new GlColor(0.5, 0.5, 0.5, 0.7);
 	/** Zeit zwischen zwei Update-Durchgängen */
 	public static final long UPDATE_TIME = 40;
 	/** Zeit bis zum Start des Spiels (in ms) */
 	public static final int STARTUP_TIME = 5000;
 	/** Punkte bis zum nächsten Level (Level * LEVEL_POINTS) */
 	public static final int LEVEL_POINTS = 600;
-	/** Maximales Level.<p>
-	 * Erreicht der Spieler MAX_LEVEL * LEVEL_POINTS Punkte, hat er gewonnen. */
-	public static final int MAX_LEVEL = 6;
 	/** Punkte pro verbundenes Feld */
 	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
 	public static final int SOUND_CLICK = 0;
@@ -70,4 +75,5 @@ public interface Constants {
 	public static final String[] SOUND_FILE_NAMES = {"rotate.wav",
 		"countdown.wav", "countdown_last.wav", "game over1.wav",
 		"level up2.wav"};
+	public static final int FADE_TIME = 1600;
 }
