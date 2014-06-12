@@ -64,8 +64,10 @@ public interface Constants {
 	public static final int[] POINTS_PER_HEX = {100, 75, 40, 20, 10, 10};
 	public static final int SOUND_CLICK = 0;
 	public static final int SOUND_COUNTDOWN = 1;
-	public static final int SOUND_GAME_OVER = 2;
-	public static final int SOUND_LEVEL_UP = 3;
+	public static final int SOUND_COUNTDOWN_LAST = 2;
+	public static final int SOUND_GAME_OVER = 3;
+	public static final int SOUND_LEVEL_UP = 4;
 	public static final String[] SOUND_FILE_NAMES = {"rotate.wav",
-		"countdown.wav", "game over0.wav", "level up2.wav"};
+		"countdown.wav", "countdown_last.wav", "game over1.wav",
+		"level up2.wav"};
 }

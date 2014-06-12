@@ -46,6 +46,10 @@ public class SoundPlayer {
 			put(new float[]{0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f}).rewind();
 	private static boolean muted = false;
 
+	public static boolean isMuted() {
+		return muted;
+	}
+
 	public static void toggleMute() {
 		muted = muted ? false : true;
 	}

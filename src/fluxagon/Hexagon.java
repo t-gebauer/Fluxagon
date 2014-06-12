@@ -38,6 +38,10 @@ public class Hexagon implements Constants {
 		}
 	}
 
+	public boolean isConnected() {
+		return connected;
+	}
+
 	private float getX() {
 		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
 				// Jede zweite Reihe wird eingeschoben

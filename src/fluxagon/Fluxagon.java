@@ -4,6 +4,7 @@
  */
 package fluxagon;
 
+import basicmenu.MenuItem;
 import java.io.File;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
@@ -19,7 +20,6 @@ import org.newdawn.slick.Color;
  *
  * @author Timo
  */
-
 public class Fluxagon implements Constants {
 
 	/** frames rendered during the last second */
@@ -33,10 +33,8 @@ public class Fluxagon implements Constants {
 	private double score = 0;
 	private double oldScore = -1;
 	private boolean running = true;
-	/** Zeitpunkt des Spielstarts in ms */
-	private long startTime;
-	/** Zeitpunkt des Spielendes in ms */
-	private long stopTime;
+	/** Zeit seit Spielstart in ms */
+	private long gameTime;
 	private HexMap map;
 	/** Boolean flag on whether the game is paused or not */
 	private boolean paused = false;
@@ -46,7 +44,10 @@ public class Fluxagon implements Constants {
 	private boolean circleMode = false;
 	/** aktuelles Level */
 	private int level = 1;
-	
+	/** GUI */
+	MenuItem guiRoot;
+	MenuItem guiMain;
+
 	public int getLevel() {
 		return level;
 	}
@@ -68,7 +69,7 @@ public class Fluxagon implements Constants {
 	 * @return if startup time is not over
 	 */
 	public boolean isWaitingToStart() {
-		return getTime() < startTime;
+		return gameTime < 0;
 	}
 
 	/**
@@ -96,6 +97,7 @@ public class Fluxagon implements Constants {
 		}
 		initResources();
 		initGame();
+		initMenu();
 	}
 
 	/**
@@ -151,7 +153,7 @@ public class Fluxagon implements Constants {
 		isOver = false;
 		score = 0;
 		level = 1;
-		startTime = getTime() + STARTUP_TIME;
+		gameTime = -STARTUP_TIME;
 	}
 
 	/**
@@ -176,6 +178,61 @@ public class Fluxagon implements Constants {
 		SoundPlayer.init(SOUND_FILE_NAMES);
 
 		Display.setTitle(WINDOW_TITLE);
+	}
+
+	private void initMenu() {
+		guiRoot = new MenuItem(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+		guiRoot.setBackgroundColor(new MenuItem.Color(0, 0, 0, 0));
+		guiMain = new MenuItem(WINDOW_WIDTH / 3, WINDOW_HEIGHT / 4,
+				WINDOW_WIDTH / 3, WINDOW_HEIGHT / 2);
+		guiMain.setBackgroundColor(new MenuItem.Color(0, 0, 0, 0.8));
+		MenuItem item = new MenuItem(0, 30, WINDOW_WIDTH / 3, 40) {
+			@Override
+			public void click() {
+				guiMain.setVisible(false);
+			}
+		};
+		item.setText("Resume");
+		MenuItem.Color labelColor = new MenuItem.Color(0.3, 0.3, 0.3, 0);
+		item.setBackgroundColor(labelColor);
+		guiMain.add(item);
+		item = new MenuItem(0, 100, WINDOW_WIDTH / 3, 40) {
+			@Override
+			public void click() {
+				initGame();
+			}
+		};
+		item.setText("Restart");
+		item.setBackgroundColor(labelColor);
+		guiMain.add(item);
+		item = new MenuItem(0, 170, WINDOW_WIDTH / 3, 40) {
+			@Override
+			public void click() {
+				SoundPlayer.toggleMute();
+				if (SoundPlayer.isMuted()) {
+					setText("Unmute");
+				} else {
+					setText("Mute");
+				}
+			}
+		};
+		if (SoundPlayer.isMuted()) {
+			item.setText("Unmute");
+		} else {
+			item.setText("Mute");
+		}
+		item.setBackgroundColor(labelColor);
+		guiMain.add(item);
+		item = new MenuItem(0, 240, WINDOW_WIDTH / 3, 40) {
+			@Override
+			public void click() {
+				running = false;
+			}
+		};
+		item.setText("Quit");
+		item.setBackgroundColor(labelColor);
+		guiMain.add(item);
+		guiRoot.add(guiMain);
 	}
 
 	/**
@@ -218,7 +275,11 @@ public class Fluxagon implements Constants {
 						paused = paused ? false : true;
 					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
-					running = false;
+					if (guiMain.isVisible()) {
+						guiMain.setVisible(false);
+					} else {
+						guiMain.setVisible(true);
+					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
@@ -240,10 +301,15 @@ public class Fluxagon implements Constants {
 	private void processMouse() {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
+				MenuItem item;
+				if ((item = guiRoot.pickItem(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY())) != guiRoot) {
+					item.click();
+					return;
+				}
 				if (Mouse.getEventButton() == 0) {
 					if (!paused && !isOver) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
-						if (hex != null) {
+						if (hex != null && !hex.isConnected()) {
 							hex.rotateCW();
 							SoundPlayer.playSound(SOUND_CLICK);
 						}
@@ -251,7 +317,7 @@ public class Fluxagon implements Constants {
 				} else if (Mouse.getEventButton() == 1) {
 					if (!paused && !isOver) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
-						if (hex != null) {
+						if (hex != null && !hex.isConnected()) {
 							hex.rotateCCW();
 							SoundPlayer.playSound(SOUND_CLICK);
 						}
@@ -269,17 +335,21 @@ public class Fluxagon implements Constants {
 		if (getTime() - lastUpdateTime < UPDATE_TIME) {
 			return;
 		}
-		lastUpdateTime += UPDATE_TIME;
+		lastUpdateTime = getTime();
 
 		TextPopup.moveAll();
 
-		if (!paused) {
+		if (!isGamePaused()) {
+			gameTime += UPDATE_TIME;
 			if (isWaitingToStart()) {
 				// jede Sekunde Sound abspielen
-				if ((startTime - getTime()) / 1000 != (startTime - getTime() - UPDATE_TIME) / 1000) {
-					SoundPlayer.playSound(SOUND_COUNTDOWN);
+				if (gameTime / 1000 != (gameTime - UPDATE_TIME) / 1000) {
+					if (gameTime < -1000) {
+						SoundPlayer.playSound(SOUND_COUNTDOWN);
+					} else {
+						SoundPlayer.playSound(SOUND_COUNTDOWN_LAST);
+					}
 				}
-				updateTitle();
 			} else {
 				oldScore = score;
 
@@ -290,7 +360,6 @@ public class Fluxagon implements Constants {
 				if (score == oldScore) {
 					if (!isOver) {
 						SoundPlayer.playSound(SOUND_GAME_OVER);
-						stopTime = getTime();
 						isOver = true;
 					}
 
@@ -310,17 +379,13 @@ public class Fluxagon implements Constants {
 		Renderer.drawText(WINDOW_WIDTH - 120, 0, "FPS: " + fps, Color.white, true, false);
 
 		// startup time
-		if (startTime - getTime() > 0) {
-			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4,
-					"Starting in: " + ((int) Math.ceil((float) (startTime - getTime()) / 1000)), Color.white,
+		if (isWaitingToStart()) {
+			Renderer.drawText(WINDOW_WIDTH / 2, 20,
+					"Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)), Color.white,
 					true, true);
 		} else {
 			// game time
-			if (!isOver) {
-				Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + (getTime() - startTime) / 1000, Color.white, true, false);
-			} else {
-				Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + (stopTime - startTime) / 1000, Color.white, true, false);
-			}
+			Renderer.drawText(WINDOW_WIDTH - 120, 30, "Zeit: " + gameTime / 1000, Color.white, true, false);
 		}
 		// level
 		Renderer.drawText(0, 0, "Level: " + level, Color.white, true, false);
@@ -328,17 +393,27 @@ public class Fluxagon implements Constants {
 		Renderer.drawText(0, 30, "Score: " + (int) score, Color.white, true, false);
 
 		// game over and pause messages
-		if (isOver) {
-			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-					"Game over :/", Color.white, true, true);
-		} else if (paused) {
-			Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
-					"Paused", Color.white, true, true);
+		if (!guiMain.isVisible()) {
+			if (isOver) {
+				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+						"Game over :/", Color.white, true, true);
+			} else if (paused) {
+				Renderer.drawText(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2,
+						"Paused", Color.white, true, true);
+			}
 		}
 		// score popups
 		if (!isWaitingToStart()) {
 			TextPopup.renderAll(this);
 		}
+
+		//Menu
+		glLoadIdentity();
+		guiRoot.drawAll();
+	}
+
+	public boolean isGamePaused() {
+		return paused || isOver || (guiMain != null && guiMain.isVisible());
 	}
 
 	/**
@@ -356,22 +431,10 @@ public class Fluxagon implements Constants {
 	public void updateFps() {
 		if (getTime() - lastFpsTime > 1000) {
 			fps = frameCount;
-			updateTitle();
 			frameCount = 0;
 			lastFpsTime += 1000;
 		}
 		frameCount++;
-	}
-
-	/**
-	 * Update the title bar
-	 */
-	public void updateTitle() {
-		/*if (startingTime > 0) {
-		 Display.setTitle("Start in: " + ((int) Math.ceil((float) startingTime / 1000)));
-		 } else {
-		 Display.setTitle(WINDOW_TITLE + " - " + fps + " fps" + " score: " + score / 100);
-		 }*/
 	}
 
 	private void destroy() {
