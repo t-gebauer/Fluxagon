@@ -12,39 +12,26 @@ import java.awt.Font;
  */
 public interface Constants {
 
-	/** Die Breite des Fensters */
-	public static final int WINDOW_WIDTH = 600;
-	/** Die Höhe des Fensters */
-	public static final int WINDOW_HEIGHT = 600;
 	/** Der Titel des Fensters */
 	public static final String WINDOW_TITLE = "Fluxagon";
+	/** Seitenverhältnis */
+	public static final float ASPECT_RATIO = 16 / 9f;
 	/** Anzahl der horizontalen Spalten */
-	public static final int COLUMN_COUNT = 7;
-	/** Anzahl der Reihen (wird irgendwie aus der Anzahl der Spalten und dem
-	 * Seitenverhältnis des Fensters berechnet) */
-	public static final int ROW_COUNT =
-			Math.round((COLUMN_COUNT + 4) * 1.0f / WINDOW_WIDTH * WINDOW_HEIGHT) + 2;
-	public static final float HEX_OFFSET_PERCENT = 0.5f;
-	/** halbe Breite des Hecagons; Abstand der Kanten */
-	public static final float HEX_WIDTH =
-			WINDOW_WIDTH / (COLUMN_COUNT * 2 + HEX_OFFSET_PERCENT * 6);
-	/** halbe Höhe des Hexagons; Abstand der Ecken */
-	public static final float HEX_HEIGHT =
-			HEX_WIDTH * 2 / (float) Math.sqrt(3);
-	public static final float HEX_OFFSET_X =
-			HEX_OFFSET_PERCENT * HEX_WIDTH * 2;
-	public static final float HEX_OFFSET_Y =
-			HEX_OFFSET_PERCENT * HEX_HEIGHT * 2;
+	public static final int COLUMN_COUNT = 5;
+	/** Anzahl der Reihen */
+	public static final int ROW_COUNT = 10;
+	/** Anzahl der sichtbaren Reihen */
+	public static final int VISIBLE_ROWS = 6;
 	/** Wahrscheinlichkeit für das Entstehen einer Lane */
 	public static final float LANE_PROBABILITY = 0.4f;
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final double BASE_FLUX_SPEED = 0.015;
-	public static final double LEVEL_FLUX_SPEED = 0.008;
+	public static final double BASE_FLUX_SPEED = 0.025;
+	public static final double LEVEL_FLUX_SPEED = 1.044;
 	/** Scrollgeschwindigkeit der Map */
-	public static final double BASE_SCROLL_SPEED = 0.25;
-	public static final double LEVEL_SCROLL_SPEED = 0.1;
+	public static final double BASE_SCROLL_SPEED = 0.011;
+	public static final double LEVEL_SCROLL_SPEED = 1.04;
 	/** Farbdefinitionen für die Hexagone */
 	public static final GlColor[] COLOR_HEXAGON = {
 		/* 0 orange */new GlColor(1, 0.6, 0.1),

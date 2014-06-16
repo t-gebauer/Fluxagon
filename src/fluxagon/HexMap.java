@@ -20,21 +20,27 @@ public class HexMap implements Constants {
 	/** X-Position des Weges (in der letzten Zeile) */
 	private int wayColumn;
 	private Random random = new Random();
+	private int rowCount, columnCount;
+	private float hexOffsetX;
 
 	public HexMap(Fluxagon main) {
 		this.main = main;
 	}
 
-	public void init() {
-		hexagons = new Hexagon[ROW_COUNT][COLUMN_COUNT];
-		for (int i = 1; i < ROW_COUNT; i++) {
-			for (int j = 0; j < COLUMN_COUNT; j++) {
+	public void init(int rows, int colums) {
+		rowCount = rows;
+		columnCount = colums;
+		hexOffsetX = (main.getWindowWidth()
+				- (main.getHexWidth() * (2 * columnCount + 1))) / 2;
+		hexagons = new Hexagon[rows][colums];
+		for (int i = 1; i < rowCount; i++) {
+			for (int j = 0; j < columnCount; j++) {
 				hexagons[i][j] = new Hexagon(main, i, j);
 			}
 		}
-		wayColumn = hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2]
+		wayColumn = hexagons[rowCount / 4][columnCount / 2]
 				.createWay(null, random);
-		hexagons[ROW_COUNT / 4][COLUMN_COUNT / 2].connectMid();
+		hexagons[rowCount / 4][columnCount / 2].connectMid();
 	}
 
 	/**
@@ -50,17 +56,21 @@ public class HexMap implements Constants {
 		return animationOffset;
 	}
 
+	public float getHexOffsetX() {
+		return hexOffsetX;
+	}
+
 	public Hexagon getHex(int row, int column) {
 		return hexagons[row][column];
 	}
 
 	public Hexagon getHexAt(float x, float y) {
-		int row = Math.round(((y - HEX_OFFSET_Y + animationOffset) / HEX_HEIGHT + 1) / 1.5f);
+		int row = Math.round(((y - main.getHexHeight() + animationOffset) / main.getHexHeight() + 1) / 1.5f);
 		// Verschiebung beachten
 		if (indentOdd ^ row % 2 == 0) {
-			x -= HEX_WIDTH;
+			x -= main.getHexWidth();
 		}
-		int column = Math.round(((x - HEX_OFFSET_X) / HEX_WIDTH - 1) / 2);
+		int column = Math.round(((x - hexOffsetX) / main.getHexWidth() - 1) / 2);
 
 		try {
 			return hexagons[row][column];
@@ -119,21 +129,21 @@ public class HexMap implements Constants {
 	 * Bewegt die Map
 	 */
 	public void scroll() {
-		animationOffset += BASE_SCROLL_SPEED + main.getLevel() * LEVEL_SCROLL_SPEED;
-		if (animationOffset >= 1.5 * HEX_HEIGHT) {
+		animationOffset += main.getHexHeight() * BASE_SCROLL_SPEED * Math.pow(LEVEL_SCROLL_SPEED, main.getLevel());
+		if (animationOffset >= 1.5 * main.getHexHeight()) {
 			animationOffset = 0;
 			indentOdd = !indentOdd;
-			for (int i = 0; i < ROW_COUNT - 1; i++) {
+			for (int i = 0; i < rowCount - 1; i++) {
 				hexagons[i] = hexagons[i + 1];
-				for (int k = 0; k < COLUMN_COUNT; k++) {
+				for (int k = 0; k < columnCount; k++) {
 					hexagons[i][k].setRow(i);
 				}
 			}
-			hexagons[ROW_COUNT - 1] = new Hexagon[COLUMN_COUNT];
-			for (int j = 0; j < COLUMN_COUNT; j++) {
-				hexagons[ROW_COUNT - 1][j] = new Hexagon(main, ROW_COUNT - 1, j);
+			hexagons[rowCount - 1] = new Hexagon[columnCount];
+			for (int j = 0; j < columnCount; j++) {
+				hexagons[rowCount - 1][j] = new Hexagon(main, rowCount - 1, j);
 			}
-			wayColumn = hexagons[ROW_COUNT - 2][wayColumn].createWay(null, random);
+			wayColumn = hexagons[rowCount - 2][wayColumn].createWay(null, random);
 		}
 	}
 

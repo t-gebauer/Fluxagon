@@ -7,7 +7,11 @@ package fluxagon;
 import basicmenu.MenuItem;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import javax.imageio.ImageIO;
 import org.lwjgl.LWJGLException;
@@ -36,6 +40,7 @@ public class Fluxagon implements Constants {
 	private boolean capFPS = true;
 	private double score = 0;
 	private double oldScore = -1;
+	private double highscore = 0;
 	private boolean running = true;
 	/** Zeit seit Spielstart in ms */
 	private long gameTime;
@@ -49,11 +54,29 @@ public class Fluxagon implements Constants {
 	/** aktuelles Level */
 	private int level = 1;
 	/** GUI */
-	MenuItem guiRoot;
-	MenuItem guiMain;
+	private MenuItem guiRoot;
+	private MenuItem guiMain;
+	private MenuItem guiOptions;
+	/** Color theme fading */
 	private long fadeStartTime;
 	private int oldHexColorIndex;
 	private int hexColorIndex;
+	/** Display size */
+	private int windowWidth = 600;
+	private int windowHeight;
+	private float hexRadius;
+
+	public int getWindowWidth() {
+		return windowWidth;
+	}
+
+	public float getHexHeight() {
+		return hexRadius;
+	}
+
+	public float getHexWidth() {
+		return (float) (hexRadius * Math.sqrt(3) / 2);
+	}
 
 	public void shuffleHexColor() {
 		oldHexColorIndex = hexColorIndex;
@@ -114,6 +137,26 @@ public class Fluxagon implements Constants {
 		return gameTime < 0;
 	}
 
+	private void calculateDisplay(int width) {
+		windowHeight = Math.round(width / ASPECT_RATIO);
+		hexRadius = windowHeight / (1.5f * (VISIBLE_ROWS - 1) + 2);
+		windowWidth = width;
+		saveSettings();
+	}
+
+	private void setDisplay(int width) {
+		calculateDisplay(width);
+		Display.destroy();
+		try {
+			initGL();
+		} catch (LWJGLException e) {
+			System.exit(1);
+		}
+		initResources();
+		initGame();
+		initMenu();
+	}
+
 	/**
 	 * @param args the command line arguments
 	 */
@@ -131,6 +174,9 @@ public class Fluxagon implements Constants {
 	}
 
 	private void init() {
+		loadSettings();
+		System.out.println(windowWidth);
+		calculateDisplay(windowWidth);
 		try {
 			initGL();
 		} catch (LWJGLException e) {
@@ -149,7 +195,7 @@ public class Fluxagon implements Constants {
 	 */
 	private void initGL() throws LWJGLException {
 		// Display
-		Display.setDisplayMode(new DisplayMode(WINDOW_WIDTH, WINDOW_HEIGHT));
+		Display.setDisplayMode(new DisplayMode(windowWidth, windowHeight));
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
 		BufferedImage icon16 = loadImage("icons/16x16.png");
@@ -173,7 +219,7 @@ public class Fluxagon implements Constants {
 		// OpenGl
 		glMatrixMode(GL_PROJECTION);
 		glLoadIdentity();
-		glOrtho(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, 1, -1);
+		glOrtho(0, windowWidth, windowHeight, 0, 1, -1);
 		glMatrixMode(GL_MODELVIEW);
 
 		// Tiefenpuffer
@@ -183,7 +229,7 @@ public class Fluxagon implements Constants {
 		glDepthMask(true);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glLineWidth(3.0f);
+		glLineWidth(hexRadius / 15);
 
 		// Antialiasing
 		glEnable(GL_LINE_SMOOTH);
@@ -209,7 +255,7 @@ public class Fluxagon implements Constants {
 	 */
 	private void initGame() {
 		map = new HexMap(this);
-		map.init();
+		map.init(ROW_COUNT, COLUMN_COUNT);
 		paused = false;
 		isOver = false;
 		score = 0;
@@ -243,22 +289,27 @@ public class Fluxagon implements Constants {
 	}
 
 	private void initMenu() {
-		guiRoot = new MenuItem(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+		GlColor labelColor = new GlColor(0.3, 0.3, 0.3, 0);
+		// Menu root
+		guiRoot = new MenuItem(0, 0, windowWidth, windowHeight);
 		guiRoot.setBackgroundColor(new GlColor(0, 0, 0, 0));
-		guiMain = new MenuItem(WINDOW_WIDTH / 3, WINDOW_HEIGHT / 4,
-				WINDOW_WIDTH / 3, WINDOW_HEIGHT / 2);
+		// Main menu
+		guiMain = new MenuItem(windowWidth / 3, windowHeight / 2 - 135,
+				windowWidth / 3, 270);
 		guiMain.setBackgroundColor(new GlColor(0, 0, 0, 0.8));
-		MenuItem item = new MenuItem(0, 30, WINDOW_WIDTH / 3, 40) {
+		guiRoot.add(guiMain);
+		// Resume button
+		MenuItem item = new MenuItem(0, 20, windowWidth / 3, 30) {
 			@Override
 			public void click() {
 				guiMain.setVisible(false);
 			}
 		};
 		item.setText("Resume");
-		GlColor labelColor = new GlColor(0.3, 0.3, 0.3, 0);
 		item.setBackgroundColor(labelColor);
 		guiMain.add(item);
-		item = new MenuItem(0, 100, WINDOW_WIDTH / 3, 40) {
+		// Restart button
+		item = new MenuItem(0, 70, windowWidth / 3, 30) {
 			@Override
 			public void click() {
 				initGame();
@@ -268,7 +319,8 @@ public class Fluxagon implements Constants {
 		item.setText("Restart");
 		item.setBackgroundColor(labelColor);
 		guiMain.add(item);
-		item = new MenuItem(0, 170, WINDOW_WIDTH / 3, 40) {
+		// Mute button
+		item = new MenuItem(0, 120, windowWidth / 3, 30) {
 			@Override
 			public void click() {
 				SoundPlayer.toggleMute();
@@ -286,7 +338,19 @@ public class Fluxagon implements Constants {
 		}
 		item.setBackgroundColor(labelColor);
 		guiMain.add(item);
-		item = new MenuItem(0, 240, WINDOW_WIDTH / 3, 40) {
+		// Options button
+		item = new MenuItem(0, 170, windowWidth / 3, 30) {
+			@Override
+			public void click() {
+				guiMain.setVisible(false);
+				guiOptions.setVisible(true);
+			}
+		};
+		item.setText("Options");
+		item.setBackgroundColor(labelColor);
+		guiMain.add(item);
+		// Quit button
+		item = new MenuItem(0, 220, windowWidth / 3, 30) {
 			@Override
 			public void click() {
 				running = false;
@@ -295,7 +359,82 @@ public class Fluxagon implements Constants {
 		item.setText("Quit");
 		item.setBackgroundColor(labelColor);
 		guiMain.add(item);
-		guiRoot.add(guiMain);
+		// Options menu
+		guiOptions = new MenuItem(windowWidth / 3, windowHeight / 2 - 110,
+				windowWidth / 3, 220);
+		guiRoot.add(guiOptions);
+		guiOptions.setVisible(false);
+		// Back button
+		item = new MenuItem(0, 20, windowWidth / 3, 30) {
+			@Override
+			public void click() {
+				guiOptions.setVisible(false);
+				guiMain.setVisible(true);
+			}
+		};
+		item.setText("Back");
+		item.setBackgroundColor(labelColor);
+		guiOptions.add(item);
+		// 600 button
+		item = new MenuItem(0, 70, windowWidth / 3, 30) {
+			@Override
+			public void click() {
+				setDisplay(600);
+			}
+		};
+		item.setText("600 x " + (int) (600 / ASPECT_RATIO));
+		item.setBackgroundColor(labelColor);
+		guiOptions.add(item);
+		// 1000 button
+		item = new MenuItem(0, 120, windowWidth / 3, 30) {
+			@Override
+			public void click() {
+				setDisplay(1000);
+			}
+		};
+		item.setText("1000 x " + (int) (1000 / ASPECT_RATIO));
+		item.setBackgroundColor(labelColor);
+		guiOptions.add(item);
+		// 1200 button
+		item = new MenuItem(0, 170, windowWidth / 3, 30) {
+			@Override
+			public void click() {
+				setDisplay(1200);
+			}
+		};
+		item.setText("1200 x " + (int) (1200 / ASPECT_RATIO));
+		item.setBackgroundColor(labelColor);
+		guiOptions.add(item);
+	}
+
+	private void saveSettings() {
+		try {
+			System.out.println("Settings -- Saving");
+			FileOutputStream fileOut = new FileOutputStream("settings.svd");
+			ObjectOutputStream out = new ObjectOutputStream(fileOut);
+			out.writeInt(windowWidth);
+			out.writeDouble(highscore);
+			out.close();
+			fileOut.close();
+			System.out.println("Settings -- Saved");
+		} catch (IOException e) {
+			System.out.println("Settings !! Failed");
+		}
+	}
+
+	private void loadSettings() {
+		try {
+			System.out.println("Settings -- Loading");
+			FileInputStream fileIn = new FileInputStream("settings.svd");
+			ObjectInputStream in = new ObjectInputStream(fileIn);
+			windowWidth = in.readInt();
+			highscore = in.readDouble();
+			in.close();
+			fileIn.close();
+			System.out.println("Settings -- Loaded");
+		} catch (IOException e) {
+			System.out.println("Settings !! Failed");
+		}
 	}
 
 	/**
@@ -365,13 +504,15 @@ public class Fluxagon implements Constants {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				MenuItem item;
-				if ((item = guiRoot.pickItem(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY())) != guiRoot) {
-					item.click();
+				if ((item = guiRoot.pickItem(Mouse.getEventX(), windowHeight - Mouse.getEventY())) != guiRoot) {
+					if (item != null) {
+						item.click();
+					}
 					return;
 				}
 				if (Mouse.getEventButton() == 0) {
 					if (!isGamePaused()) {
-						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCW();
 							SoundPlayer.playSound(SOUND_CLICK);
@@ -379,7 +520,7 @@ public class Fluxagon implements Constants {
 					}
 				} else if (Mouse.getEventButton() == 1) {
 					if (!isGamePaused()) {
-						Hexagon hex = map.getHexAt(Mouse.getEventX(), WINDOW_HEIGHT - Mouse.getEventY());
+						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCCW();
 							SoundPlayer.playSound(SOUND_CLICK);
@@ -424,6 +565,10 @@ public class Fluxagon implements Constants {
 					if (!isOver) {
 						SoundPlayer.playSound(SOUND_GAME_OVER);
 						isOver = true;
+						if (score > highscore) {
+							highscore = score;
+							saveSettings();
+						}
 					}
 
 				}
@@ -440,36 +585,40 @@ public class Fluxagon implements Constants {
 		// render text
 		glLoadIdentity();
 		// fps
-		Renderer.drawText("FPS: " + fps, WINDOW_WIDTH - 120, 0, false, true);
+		Renderer.drawText("FPS: " + fps, windowWidth - 120, 0, false, true);
 
 		// startup time
 		if (isWaitingToStart()) {
 			Renderer.drawText("Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)),
-					WINDOW_WIDTH / 2, 20, true, true);
+					windowWidth / 2, 20, true, true);
 		} else {
 			// game time
-			Renderer.drawText("Zeit: " + gameTime / 1000, WINDOW_WIDTH - 120, 30,
+			Renderer.drawText("Zeit: " + gameTime / 1000, windowWidth - 120, 30,
 					false, true);
 		}
 		// level
 		Renderer.drawText("Level: " + level, false, true);
 		// score
 		Renderer.drawText("Score: " + (int) score, 0, 30, false, true);
+		// highscore
+		if (isOver) {
+			Renderer.drawText("Highscore: " + (int) highscore, 0, 60, false, true);
+		}
 
 		// game over and pause messages
 		if (!guiMain.isVisible()) {
 			if (isOver) {
-				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
-				Renderer.drawQuad(WINDOW_WIDTH, 60);
-				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
+				glTranslatef(0, windowHeight / 2 - 30, 0);
+				Renderer.drawQuad(windowWidth, 60);
+				glTranslatef(0, -windowHeight / 2 + 30, 0);
 				Renderer.drawText("Game over :/",
-						WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, true);
+						windowWidth / 2, windowHeight / 2, true);
 			} else if (paused) {
-				glTranslatef(0, WINDOW_HEIGHT / 2 - 30, 0);
-				Renderer.drawQuad(WINDOW_WIDTH, 60);
-				glTranslatef(0, -WINDOW_HEIGHT / 2 + 30, 0);
+				glTranslatef(0, windowHeight / 2 - 30, 0);
+				Renderer.drawQuad(windowWidth, 60);
+				glTranslatef(0, -windowHeight / 2 + 30, 0);
 				Renderer.drawText("Paused",
-						WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2, true);
+						windowWidth / 2, windowHeight / 2, true);
 			}
 		}
 		// score popups
@@ -483,7 +632,8 @@ public class Fluxagon implements Constants {
 	}
 
 	public boolean isGamePaused() {
-		return paused || isOver || (guiMain != null && guiMain.isVisible());
+		return paused || isOver || (guiMain != null && guiMain.isVisible())
+				|| (guiOptions != null && guiOptions.isVisible());
 	}
 
 	/**

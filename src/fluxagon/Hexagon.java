@@ -42,21 +42,21 @@ public class Hexagon implements Constants {
 	}
 
 	private float getX() {
-		float x = HEX_OFFSET_X + (column * 2 + 1) * HEX_WIDTH;
+		float x = main.getMap().getHexOffsetX() + (column * 2 + 1) * main.getHexWidth();
 		// Jede zweite Reihe wird eingeschoben
 		if (main.getMap().isIndentOdd() ^ row % 2 == 0) {
-			x += HEX_WIDTH;
+			x += main.getHexWidth();
 		}
 		return x;
 	}
 
 	private float getY() {
-		return HEX_OFFSET_Y + (row * 1.5f - 1) * HEX_HEIGHT
+		return (row * 1.5f) * main.getHexHeight()
 				- main.getMap().getAnimationOffset();
 	}
 
 	/**
-	 * vergibt Punkte anhand der Anzahlder Lanes auf dem Hexagon
+	 * vergibt Punkte anhand der Anzahl der Lanes auf dem Hexagon
 	 */
 	public void connect() {
 		if (!connected) {
@@ -179,7 +179,7 @@ public class Hexagon implements Constants {
 				}
 				if (l.isInConnected() && l.getInOut() < 1) {
 					main.incScore(0.03125);
-					l.incIn(BASE_FLUX_SPEED + main.getLevel() * LEVEL_FLUX_SPEED);
+					l.incIn(BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel()));
 					if (l.getIn() == 1) {
 						// alle anderen Triangles "infizieren"
 						connectMid();
@@ -187,7 +187,7 @@ public class Hexagon implements Constants {
 				}
 				if (l.isOutConnected() && l.getInOut() < 1) {
 					main.incScore(0.03125);
-					l.incOut(BASE_FLUX_SPEED + main.getLevel() * LEVEL_FLUX_SPEED);
+					l.incOut(BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel()));
 					if (l.getOut() == 1) {
 						int num = (i + Math.round(goalRotation / 60)) % 6;
 						if (num < 0) {
@@ -297,13 +297,13 @@ public class Hexagon implements Constants {
 		if (main.getCircleMode()) {
 			glVertex2f(0, 0);
 			for (int i = 0; i < 360; i++) {
-				glVertex2f((float) Math.sin(i) * HEX_WIDTH,
-						(float) Math.cos(i) * HEX_WIDTH);
+				glVertex2f((float) Math.sin(i) * main.getHexWidth(),
+						(float) Math.cos(i) * main.getHexWidth());
 			}
 		} else {
 			for (int i = 0; i < 6; i++) {
-				glVertex2f((float) Math.sin(i * Math.PI / 3) * HEX_HEIGHT,
-						(float) Math.cos(i * Math.PI / 3) * HEX_HEIGHT);
+				glVertex2f((float) Math.sin(i * Math.PI / 3) * main.getHexHeight(),
+						(float) Math.cos(i * Math.PI / 3) * main.getHexHeight());
 			}
 		}
 		glEnd();
@@ -317,42 +317,42 @@ public class Hexagon implements Constants {
 		l = lanes[0];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					-HEX_WIDTH * 0.5f, HEX_HEIGHT * 0.75f,
+					-main.getHexWidth() * 0.5f, main.getHexHeight() * 0.75f,
 					l.getOut(), l.getIn());
 		}
 		// left-mid
 		l = lanes[1];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					-HEX_WIDTH, 0,
+					-main.getHexWidth(), 0,
 					l.getOut(), l.getIn());
 		}
 		// left-top
 		l = lanes[2];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					-HEX_WIDTH * 0.5f, -HEX_HEIGHT * 0.75f,
+					-main.getHexWidth() * 0.5f, -main.getHexHeight() * 0.75f,
 					l.getOut(), l.getIn());
 		}
 		// right-top
 		l = lanes[3];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					HEX_WIDTH * 0.5f, -HEX_HEIGHT * 0.75f,
+					main.getHexWidth() * 0.5f, -main.getHexHeight() * 0.75f,
 					l.getOut(), l.getIn());
 		}
 		// right-mid
 		l = lanes[4];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					HEX_WIDTH, 0,
+					main.getHexWidth(), 0,
 					l.getOut(), l.getIn());
 		}
 		// right-bottom
 		l = lanes[5];
 		if (l != null) {
 			drawLineBackgroundAndPercents(0, 0,
-					HEX_WIDTH * 0.5f, HEX_HEIGHT * 0.75f,
+					main.getHexWidth() * 0.5f, main.getHexHeight() * 0.75f,
 					l.getOut(), l.getIn());
 		}
 	}
