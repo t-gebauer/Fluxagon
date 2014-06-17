@@ -74,7 +74,7 @@ public class Fluxagon implements Constants {
 	private Texture texReset;
 	private Texture texMute;
 	private Texture texQuit;
-	private Texture texLogoBlack;
+	private Texture texFlxgn;
 	private Texture texUnmute;
 	private boolean showCredits;
 	private Texture texResolution;
@@ -302,12 +302,12 @@ public class Fluxagon implements Constants {
 
 		// load textures
 		texEmpty = loadTexture("PNG", "gfx/menu/empty.png");
-		texPlay = loadTexture("PNG", "gfx/menu/play.png");
-		texReset = loadTexture("PNG", "gfx/menu/reset.png");
-		texMute = loadTexture("PNG", "gfx/menu/mute.png");
-		texUnmute = loadTexture("PNG", "gfx/menu/unmute.png");
-		texQuit = loadTexture("PNG", "gfx/menu/quit.png");
-		texLogoBlack = loadTexture("PNG", "gfx/menu/logo_black.png");
+		texPlay = loadTexture("PNG", "gfx/menu/continue.png");
+		texReset = loadTexture("PNG", "gfx/menu/restart.png");
+		texMute = loadTexture("PNG", "gfx/menu/mute_active.png");
+		texUnmute = loadTexture("PNG", "gfx/menu/mute_disabled.png");
+		texQuit = loadTexture("PNG", "gfx/menu/close.png");
+		texFlxgn = loadTexture("PNG", "gfx/menu/flxgn.png");
 		texResolution = loadTexture("PNG", "gfx/menu/resolution.png");
 		texResSmall = loadTexture("PNG", "gfx/menu/resolution_small.png");
 		texResMiddle = loadTexture("PNG", "gfx/menu/resolution_middle.png");
@@ -330,12 +330,13 @@ public class Fluxagon implements Constants {
 
 	private void initMenu() {
 		// Calculate hexagon width and height
-		HexMenuItem.width = windowWidth / 9;
+		int width = windowWidth / 9;
 		// Weite sollte halbierbar sein
-		if (HexMenuItem.width % 2 != 0) {
-			HexMenuItem.width++;
+		if (width % 2 != 0) {
+			width++;
 		}
-		HexMenuItem.height = Math.round(HexMenuItem.width * 2 / (float) Math.sqrt(3));
+		int height = Math.round(width * 2 / (float) Math.sqrt(3));
+		HexMenuItem.init(width, height, texEmpty, COLOR_HEXAGON[getHexColorIndex()]);
 
 		// Main menu
 		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
@@ -354,13 +355,13 @@ public class Fluxagon implements Constants {
 				menuOptions.setVisible(false);
 			}
 		});
-		menuMain.add(new HexMenuItem(-1, 0, texEmpty) {
+		menuMain.add(new HexMenuItem(-1, 0, null) {
 			@Override
 			public void click() {
 				showCredits = showCredits ? false : true;
 			}
 		});
-		menuMain.add(new HexMenuItem(0, 0, texLogoBlack));
+		menuMain.add(new HexMenuItem(0, 0, texFlxgn));
 		menuMain.add(new HexMenuItem(1, 0, texResolution) {
 			@Override
 			public void click() {
@@ -636,13 +637,13 @@ public class Fluxagon implements Constants {
 		if (menuMain.isVisible()) {
 			glColor4d(0, 0, 0, 0.4);
 			Renderer.drawQuad(windowWidth, windowHeight);
+			HexMenuItem.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
 			if (menuOptions.isVisible()) {
-				glColor4d(0.75, 0.75, 0.75, 1);
+				HexMenuItem.setColor(new GlColor(0.75, 0.75, 0.75, 1));
 				menuMain.render(0, 0);
-				Color.white.bind();
+				HexMenuItem.setColor(GlColor.white());
 				menuOptions.render(0, 0);
 			} else {
-				Color.white.bind();
 				menuMain.render(0, 0);
 			}
 		}

@@ -43,8 +43,8 @@ public interface Constants {
 	public static final GlColor[] COLOR_LINE_FG = {
 		/* 0 */new GlColor(0, 0.8, 0.1),
 		/* 1 */ GlColor.fromByte(188, 0, 166),
-		/* 2 */ GlColor.fromByte(66, 88, 137),
-		/* 3 */ GlColor.fromByte(74, 62, 134),
+		/* 2 */ GlColor.fromHex(0xAA4839),
+		/* 3 */ GlColor.fromHex(0xAA6A39),
 		/* 4 */ GlColor.fromByte(159, 177, 40)};
 	/** Farbdefinition für den Hintergrund der Lanes */
 	public static final GlColor COLOR_LINE_BG = new GlColor(0.5, 0.5, 0.5, 0.7);

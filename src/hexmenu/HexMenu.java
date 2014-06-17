@@ -35,8 +35,8 @@ public class HexMenu {
 		if (!visible || hexList == null) {
 			return;
 		}
-		float relX = (x - this.x) / HexMenuItem.width;
-		float relY = (y - this.y) / HexMenuItem.height;
+		float relX = (x - this.x) / HexMenuItem.getWidth();
+		float relY = (y - this.y) / HexMenuItem.getHeight();
 		for (HexMenuItem item : hexList) {
 			if (item.pick(relX, relY)) {
 				item.click();

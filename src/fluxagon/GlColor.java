@@ -51,12 +51,20 @@ public class GlColor {
 				(int) (hexValue / 0x01000000) & 0xff);
 	}
 
+	public static GlColor white() {
+		return new GlColor(1, 1, 1, 1);
+	}
+
 	public void bind() {
 		GL11.glColor4d(r, g, b, a);
 	}
 
 	public GlColor mult(double d) {
 		return new GlColor(r * d, g * d, b * d, a);
+	}
+
+	public GlColor mult(GlColor color) {
+		return new GlColor(r * color.r, g * color.g, b * color.b, a * color.a);
 	}
 
 	public GlColor add(GlColor clr) {

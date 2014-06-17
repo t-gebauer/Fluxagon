@@ -4,6 +4,7 @@
  */
 package hexmenu;
 
+import fluxagon.GlColor;
 import fluxagon.Renderer;
 import org.lwjgl.opengl.GL11;
 import org.newdawn.slick.opengl.Texture;
@@ -14,7 +15,10 @@ import org.newdawn.slick.opengl.Texture;
  */
 public class HexMenuItem {
 
-	public static int width, height;
+	private static int width, height;
+	private static Texture backgroundTex;
+	private static GlColor backgroundColor;
+	private static GlColor color = new GlColor(1,1,1);
 	/** relative Position des Mittelpunktes */
 	private float x, y;
 	private Texture texture;
@@ -24,10 +28,34 @@ public class HexMenuItem {
 		this.y = y;
 		this.texture = texture;
 	}
+	
+	public static void init(int width, int height, Texture empty, GlColor hexColor) {
+		HexMenuItem.width = width;
+		HexMenuItem.height = height;
+		HexMenuItem.backgroundTex = empty;
+		HexMenuItem.backgroundColor = hexColor;
+	}
 
 	public void setTexture(Texture texture) {
 		this.texture = texture;
 	}
+
+	public static void setHexColor(GlColor hexColor) {
+		HexMenuItem.backgroundColor = hexColor;
+	}
+
+	public static void setColor(GlColor color) {
+		HexMenuItem.color = color;
+	}
+
+	public static int getWidth() {
+		return width;
+	}
+
+	public static int getHeight() {
+		return height;
+	}
+	
 
 	public void click() {
 	}
@@ -37,10 +65,18 @@ public class HexMenuItem {
 	}
 
 	public void draw() {
-		texture.bind();
 		GL11.glPushMatrix();
 		GL11.glTranslatef((x - 0.5f) * width, (y - 0.5f) * height, 0);
-		Renderer.drawTexture(texture, width, height);
+		if (backgroundTex != null) {
+			backgroundColor.mult(color).bind();
+			backgroundTex.bind();
+			Renderer.drawTexture(backgroundTex, width, height);
+		}
+		if (texture != null) {
+			color.bind();
+			texture.bind();
+			Renderer.drawTexture(texture, width, height);
+		}
 		GL11.glPopMatrix();
 	}
 }
