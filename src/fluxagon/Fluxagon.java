@@ -51,8 +51,6 @@ public class Fluxagon implements Constants {
 	/** Zeit seit Spielstart in ms */
 	private long gameTime;
 	private HexMap map;
-	/** Boolean flag on whether the game is paused or not */
-	private boolean paused = false;
 	/** Boolean flag on whether the game is over */
 	private boolean isOver;
 	/** Boolean flag on whether circles or hexagons are drawn */
@@ -64,14 +62,13 @@ public class Fluxagon implements Constants {
 	private int oldHexColorIndex;
 	private int hexColorIndex;
 	/** Display size */
-	private int windowWidth = 600;
+	private int windowWidth = 900;
 	private int windowHeight;
 	private float hexRadius;
 	/** GUI */
 	private HexMenu menuMain;
 	private HexMenu menuOptions;
 	/** Textures */
-	private Texture texLeer;
 	private Texture texEmpty;
 	private Texture texPlay;
 	private Texture texReset;
@@ -79,6 +76,11 @@ public class Fluxagon implements Constants {
 	private Texture texQuit;
 	private Texture texLogoBlack;
 	private Texture texUnmute;
+	private boolean showCredits;
+	private Texture texResolution;
+	private Texture texResSmall;
+	private Texture texResMiddle;
+	private Texture texResBig;
 
 	public int getWindowWidth() {
 		return windowWidth;
@@ -270,7 +272,6 @@ public class Fluxagon implements Constants {
 	private void initGame() {
 		map = new HexMap(this);
 		map.init(ROW_COUNT, COLUMN_COUNT);
-		paused = false;
 		isOver = false;
 		score = 0;
 		level = 1;
@@ -307,6 +308,10 @@ public class Fluxagon implements Constants {
 		texUnmute = loadTexture("PNG", "gfx/menu/unmute.png");
 		texQuit = loadTexture("PNG", "gfx/menu/quit.png");
 		texLogoBlack = loadTexture("PNG", "gfx/menu/logo_black.png");
+		texResolution = loadTexture("PNG", "gfx/menu/resolution.png");
+		texResSmall = loadTexture("PNG", "gfx/menu/resolution_small.png");
+		texResMiddle = loadTexture("PNG", "gfx/menu/resolution_middle.png");
+		texResBig = loadTexture("PNG", "gfx/menu/resolution_big.png");
 
 		Display.setTitle(WINDOW_TITLE);
 	}
@@ -325,13 +330,13 @@ public class Fluxagon implements Constants {
 
 	private void initMenu() {
 		// Calculate hexagon width and height
-		HexMenuItem.width = windowWidth / 10;
+		HexMenuItem.width = windowWidth / 9;
 		// Weite sollte halbierbar sein
 		if (HexMenuItem.width % 2 != 0) {
 			HexMenuItem.width++;
 		}
 		HexMenuItem.height = Math.round(HexMenuItem.width * 2 / (float) Math.sqrt(3));
-		
+
 		// Main menu
 		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
 		menuMain.add(new HexMenuItem(-0.5f, -0.75f, texPlay) {
@@ -349,9 +354,14 @@ public class Fluxagon implements Constants {
 				menuOptions.setVisible(false);
 			}
 		});
-		menuMain.add(new HexMenuItem(-1, 0, texEmpty));
+		menuMain.add(new HexMenuItem(-1, 0, texEmpty) {
+			@Override
+			public void click() {
+				showCredits = showCredits ? false : true;
+			}
+		});
 		menuMain.add(new HexMenuItem(0, 0, texLogoBlack));
-		menuMain.add(new HexMenuItem(1, 0, texEmpty) {
+		menuMain.add(new HexMenuItem(1, 0, texResolution) {
 			@Override
 			public void click() {
 				if (menuOptions.isVisible()) {
@@ -361,7 +371,8 @@ public class Fluxagon implements Constants {
 				}
 			}
 		});
-		menuMain.add(new HexMenuItem(-0.5f, 0.75f, texUnmute) {
+		menuMain.add(new HexMenuItem(-0.5f, 0.75f,
+				(SoundPlayer.isMuted() ? texMute : texUnmute)) {
 			@Override
 			public void click() {
 				SoundPlayer.toggleMute();
@@ -370,6 +381,7 @@ public class Fluxagon implements Constants {
 				} else {
 					setTexture(texUnmute);
 				}
+				saveSettings();
 			}
 		});
 		menuMain.add(new HexMenuItem(0.5f, 0.75f, texQuit) {
@@ -380,19 +392,19 @@ public class Fluxagon implements Constants {
 		});
 		// Options menu
 		menuOptions = new HexMenu(windowWidth / 2, windowHeight / 2, false);
-		menuOptions.add(new HexMenuItem(1.5f, -0.75f, texEmpty) {
+		menuOptions.add(new HexMenuItem(1.5f, -0.75f, texResSmall) {
 			@Override
 			public void click() {
 				setDisplay(600);
 			}
 		});
-		menuOptions.add(new HexMenuItem(2, 0, texEmpty) {
+		menuOptions.add(new HexMenuItem(2, 0, texResMiddle) {
 			@Override
 			public void click() {
 				setDisplay(900);
 			}
 		});
-		menuOptions.add(new HexMenuItem(1.5f, 0.75f, texEmpty) {
+		menuOptions.add(new HexMenuItem(1.5f, 0.75f, texResBig) {
 			@Override
 			public void click() {
 				setDisplay(1200);
@@ -407,6 +419,7 @@ public class Fluxagon implements Constants {
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 			out.writeInt(windowWidth);
 			out.writeDouble(highscore);
+			out.writeBoolean(SoundPlayer.isMuted());
 			out.close();
 			fileOut.close();
 			System.out.println("Settings -- Saved");
@@ -422,6 +435,9 @@ public class Fluxagon implements Constants {
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			windowWidth = in.readInt();
 			highscore = in.readDouble();
+			if (in.readBoolean()) {
+				SoundPlayer.toggleMute();
+			}
 			in.close();
 			fileIn.close();
 			System.out.println("Settings -- Loaded");
@@ -465,11 +481,7 @@ public class Fluxagon implements Constants {
 	private void processKeyboard() {
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
-				if (Keyboard.getEventKey() == Keyboard.KEY_PAUSE) {
-					if (!isOver) {
-						paused = paused ? false : true;
-					}
-				} else if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
+				if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
 					if (menuOptions.isVisible()) {
 						menuOptions.setVisible(false);
 					} else if (menuMain.isVisible()) {
@@ -576,47 +588,47 @@ public class Fluxagon implements Constants {
 		// render text
 		glLoadIdentity();
 		// fps
-		Renderer.drawText("FPS: " + fps, windowWidth - 120, 0, false, true);
+		if (isMenuOpen()) {
+			Renderer.drawText(windowWidth, windowHeight, "FPS: " + fps, 1, 1);
+		}
 
 		// startup time
 		if (isWaitingToStart()) {
-			Renderer.drawText("Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)),
-					windowWidth / 2, 20, true, true);
+			Renderer.drawText(windowWidth / 2, 0,
+					"Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)),
+					0.5f, 0);
 		} else {
 			// game time
-			Renderer.drawText("Zeit: " + gameTime / 1000, windowWidth - 120, 30,
-					false, true);
+			Renderer.drawText(windowWidth, 0, "Zeit: " + gameTime / 1000, 1, 0);
 		}
-		// level
-		Renderer.drawText("Level: " + level, false, true);
 		// score
-		Renderer.drawText("Score: " + (int) score, 0, 30, false, true);
+		Renderer.drawText("Score: " + (int) score);
+		// level
+		Renderer.drawText(0, 25, "Level: " + level);
 		// highscore
 		if (isOver) {
-			Renderer.drawText("Highscore: " + (int) highscore, 0, 60, false, true);
+			Renderer.drawText(0, 60, "Highscore: " + (int) highscore);
 		}
 
 		// game over and pause messages
+		glPushMatrix();
 		if (!isMenuOpen()) {
 			if (isOver) {
 				glTranslatef(0, windowHeight / 2 - 30, 0);
 				glColor4d(0, 0, 0, 0.75);
 				Renderer.drawQuad(windowWidth, 60);
 				glTranslatef(0, -windowHeight / 2 + 30, 0);
-				Renderer.drawText("Game over :/",
-						windowWidth / 2, windowHeight / 2, true);
-			} else if (paused) {
-				glTranslatef(0, windowHeight / 2 - 30, 0);
-				glColor4d(0, 0, 0, 0.75);
-				Renderer.drawQuad(windowWidth, 60);
-				glTranslatef(0, -windowHeight / 2 + 30, 0);
-				Renderer.drawText("Paused",
-						windowWidth / 2, windowHeight / 2, true);
+				Renderer.drawText(windowWidth / 2, windowHeight / 2,
+						"Game over :/", 0.5f, 0.5f);
 			}
 		}
-		// score popups
-		if (!isWaitingToStart()) {
-			TextPopup.renderAll();
+		glPopMatrix();
+
+		// creator
+		if (showCredits) {
+			Renderer.drawText(windowWidth / 2, windowHeight,
+					"Created by Benjamin Strilziw && Timo Gebauer",
+					0.5f, 1);
 		}
 
 		// Menu
@@ -637,7 +649,7 @@ public class Fluxagon implements Constants {
 	}
 
 	public boolean isGamePaused() {
-		return paused || isOver || isMenuOpen();
+		return isOver || isMenuOpen();
 	}
 
 	public boolean isMenuOpen() {

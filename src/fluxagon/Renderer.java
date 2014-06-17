@@ -46,24 +46,22 @@ public class Renderer {
 	 * Zeichnet einen Text
 	 */
 	public static void drawText(String text) {
-		drawText(text, false, false);
+		drawText(text, 0, 0, false);
 	}
 
-	public static void drawText(String text, boolean center) {
-		drawText(text, center, false);
+	public static void drawText(String text, boolean background) {
+		drawText(text, 0, 0, background);
 	}
 
-	public static void drawText(String text, boolean center, boolean background) {
+	public static void drawText(String text, float cX, float cY) {
+		drawText(text, cX, cY, false);
+	}
+
+	public static void drawText(String text, float cX, float cY, boolean background) {
 		int width = fonts[fontIndex].getWidth(text);
 		int height = fonts[fontIndex].getHeight(text);
-		if (center) {
-			int x = 0;
-			int y = 0;
-			x -= width / 2;
-			y -= height / 2;
-			glPushMatrix();
-			glTranslatef(x, y, 0);
-		}
+		glPushMatrix();
+		glTranslatef(-cX * width, -cY * height, 0);
 		// Hintergrund zeichnen
 		if (background) {
 			backgroundColor.bind();
@@ -78,24 +76,26 @@ public class Renderer {
 		if (!glTexEnabled) {
 			glDisable(GL_TEXTURE_2D);
 		}
-		if (center) {
-			glPopMatrix();
-		}
+		glPopMatrix();
 	}
 
-	public static void drawText(String text, int x, int y) {
-		drawText(text, x, y, false, false);
+	public static void drawText(int x, int y, String text) {
+		drawText(x, y, text, 0, 0, false);
 	}
 
-	public static void drawText(String text, int x, int y, boolean center) {
-		drawText(text, x, y, center, false);
+	public static void drawText(int x, int y, String text, boolean background) {
+		drawText(x, y, text, 0, 0, background);
 	}
 
-	public static void drawText(String text, int x, int y, boolean center,
+	public static void drawText(int x, int y, String text, float cX, float cY) {
+		drawText(x, y, text, cX, cY, false);
+	}
+
+	public static void drawText(int x, int y, String text, float cX, float cY,
 			boolean background) {
 		glPushMatrix();
 		glTranslatef(x, y, 0);
-		drawText(text, center, background);
+		drawText(text, cX, cY, background);
 		glPopMatrix();
 	}
 
