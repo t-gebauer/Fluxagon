@@ -22,6 +22,7 @@ public class HexMenuItem {
 	/** relative Position des Mittelpunktes */
 	private float x, y;
 	private Texture texture;
+	private boolean drawBackground = true;
 
 	public HexMenuItem(float x, float y, Texture texture) {
 		this.x = x;
@@ -29,6 +30,12 @@ public class HexMenuItem {
 		this.texture = texture;
 	}
 	
+	public HexMenuItem(float x, float y, Texture texture, boolean background) {
+		this.x = x;
+		this.y = y;
+		this.texture = texture;
+		this.drawBackground = background;
+	}
 	public static void init(int width, int height, Texture empty, GlColor hexColor) {
 		HexMenuItem.width = width;
 		HexMenuItem.height = height;
@@ -67,7 +74,7 @@ public class HexMenuItem {
 	public void draw() {
 		GL11.glPushMatrix();
 		GL11.glTranslatef((x - 0.5f) * width, (y - 0.5f) * height, 0);
-		if (backgroundTex != null) {
+		if (backgroundTex != null && drawBackground) {
 			backgroundColor.mult(color).bind();
 			backgroundTex.bind();
 			Renderer.drawTexture(backgroundTex, width, height);

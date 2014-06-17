@@ -306,7 +306,7 @@ public class Fluxagon implements Constants {
 		texReset = loadTexture("PNG", "gfx/menu/restart.png");
 		texMute = loadTexture("PNG", "gfx/menu/mute_active.png");
 		texUnmute = loadTexture("PNG", "gfx/menu/mute_disabled.png");
-		texQuit = loadTexture("PNG", "gfx/menu/close.png");
+		texQuit = loadTexture("PNG", "gfx/menu/exit.png");
 		texFlxgn = loadTexture("PNG", "gfx/menu/flxgn.png");
 		texResolution = loadTexture("PNG", "gfx/menu/resolution.png");
 		texResSmall = loadTexture("PNG", "gfx/menu/resolution_small.png");
@@ -340,11 +340,20 @@ public class Fluxagon implements Constants {
 
 		// Main menu
 		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
+		menuMain.add(new HexMenuItem(0, 0, texFlxgn, false));
+		menuMain.add(new HexMenuItem(-1, 0, null) {
+			@Override
+			public void click() {
+				showCredits = showCredits ? false : true;
+			}
+		});
 		menuMain.add(new HexMenuItem(-0.5f, -0.75f, texPlay) {
 			@Override
 			public void click() {
 				menuMain.setVisible(false);
-				menuOptions.setVisible(false);
+				if (menuOptions.isVisible()) {
+					menuOptions.setVisible(false);
+				}
 			}
 		});
 		menuMain.add(new HexMenuItem(0.5f, -0.75f, texReset) {
@@ -352,16 +361,11 @@ public class Fluxagon implements Constants {
 			public void click() {
 				initGame();
 				menuMain.setVisible(false);
-				menuOptions.setVisible(false);
+				if (menuOptions.isVisible()) {
+					menuOptions.setVisible(false);
+				}
 			}
 		});
-		menuMain.add(new HexMenuItem(-1, 0, null) {
-			@Override
-			public void click() {
-				showCredits = showCredits ? false : true;
-			}
-		});
-		menuMain.add(new HexMenuItem(0, 0, texFlxgn));
 		menuMain.add(new HexMenuItem(1, 0, texResolution) {
 			@Override
 			public void click() {
@@ -579,6 +583,8 @@ public class Fluxagon implements Constants {
 			}
 		}
 		map.animate();
+		menuMain.animate((int) UPDATE_TIME);
+		menuOptions.animate((int) UPDATE_TIME);
 	}
 
 	private void render() {
@@ -590,25 +596,25 @@ public class Fluxagon implements Constants {
 		glLoadIdentity();
 		// fps
 		if (isMenuOpen()) {
-			Renderer.drawText(windowWidth, windowHeight, "FPS: " + fps, 1, 1);
+			Renderer.drawText(windowWidth - 9, windowHeight - 9, "FPS: " + fps, 1, 1);
 		}
 
 		// startup time
 		if (isWaitingToStart()) {
-			Renderer.drawText(windowWidth / 2, 0,
+			Renderer.drawText(windowWidth / 2, 4,
 					"Starting in: " + (int) Math.ceil((float) (-gameTime / 1000)),
 					0.5f, 0);
 		} else {
 			// game time
-			Renderer.drawText(windowWidth, 0, "Zeit: " + gameTime / 1000, 1, 0);
+			Renderer.drawText(windowWidth - 9, 9, "Zeit: " + gameTime / 1000, 1, 0);
 		}
 		// score
-		Renderer.drawText("Score: " + (int) score);
+		Renderer.drawText(9, 9, "Score: " + (int) score);
 		// level
-		Renderer.drawText(0, 25, "Level: " + level);
+		Renderer.drawText(9, 25 + 9, "Level: " + level);
 		// highscore
 		if (isOver) {
-			Renderer.drawText(0, 60, "Highscore: " + (int) highscore);
+			Renderer.drawText(9, 50 + 9, "Highscore: " + (int) highscore);
 		}
 
 		// game over and pause messages
@@ -627,7 +633,7 @@ public class Fluxagon implements Constants {
 
 		// creator
 		if (showCredits) {
-			Renderer.drawText(windowWidth / 2, windowHeight,
+			Renderer.drawText(windowWidth / 2, windowHeight - 9,
 					"Created by Benjamin Strilziw && Timo Gebauer",
 					0.5f, 1);
 		}
@@ -637,15 +643,15 @@ public class Fluxagon implements Constants {
 		if (menuMain.isVisible()) {
 			glColor4d(0, 0, 0, 0.4);
 			Renderer.drawQuad(windowWidth, windowHeight);
-			HexMenuItem.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
-			if (menuOptions.isVisible()) {
-				HexMenuItem.setColor(new GlColor(0.75, 0.75, 0.75, 1));
-				menuMain.render(0, 0);
-				HexMenuItem.setColor(GlColor.white());
-				menuOptions.render(0, 0);
-			} else {
-				menuMain.render(0, 0);
-			}
+		}
+		HexMenuItem.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
+		if (menuOptions.isVisible()) {
+			HexMenuItem.setColor(new GlColor(0.75, 0.75, 0.75, 1));
+			menuMain.render(0, 0);
+			HexMenuItem.setColor(GlColor.white());
+			menuOptions.render(0, 0);
+		} else {
+			menuMain.render(0, 0);
 		}
 	}
 
