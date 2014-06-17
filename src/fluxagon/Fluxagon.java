@@ -4,7 +4,8 @@
  */
 package fluxagon;
 
-import basicmenu.MenuItem;
+import hexmenu.HexMenu;
+import hexmenu.HexMenuItem;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,7 +23,11 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.PixelFormat;
+import org.newdawn.slick.Color;
 import org.newdawn.slick.opengl.ImageIOImageData;
+import org.newdawn.slick.opengl.Texture;
+import org.newdawn.slick.opengl.TextureLoader;
+import org.newdawn.slick.util.ResourceLoader;
 
 /**
  *
@@ -38,6 +43,7 @@ public class Fluxagon implements Constants {
 	private long lastUpdateTime;
 	/** Boolean flag on whether are capped to 60 per second or not */
 	private boolean capFPS = true;
+	/** Score */
 	private double score = 0;
 	private double oldScore = -1;
 	private double highscore = 0;
@@ -53,10 +59,6 @@ public class Fluxagon implements Constants {
 	private boolean circleMode = false;
 	/** aktuelles Level */
 	private int level = 1;
-	/** GUI */
-	private MenuItem guiRoot;
-	private MenuItem guiMain;
-	private MenuItem guiOptions;
 	/** Color theme fading */
 	private long fadeStartTime;
 	private int oldHexColorIndex;
@@ -65,6 +67,18 @@ public class Fluxagon implements Constants {
 	private int windowWidth = 600;
 	private int windowHeight;
 	private float hexRadius;
+	/** GUI */
+	private HexMenu menuMain;
+	private HexMenu menuOptions;
+	/** Textures */
+	private Texture texLeer;
+	private Texture texEmpty;
+	private Texture texPlay;
+	private Texture texReset;
+	private Texture texMute;
+	private Texture texQuit;
+	private Texture texLogoBlack;
+	private Texture texUnmute;
 
 	public int getWindowWidth() {
 		return windowWidth;
@@ -175,7 +189,6 @@ public class Fluxagon implements Constants {
 
 	private void init() {
 		loadSettings();
-		System.out.println(windowWidth);
 		calculateDisplay(windowWidth);
 		try {
 			initGL();
@@ -198,6 +211,7 @@ public class Fluxagon implements Constants {
 		Display.setDisplayMode(new DisplayMode(windowWidth, windowHeight));
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
+
 		BufferedImage icon16 = loadImage("icons/16x16.png");
 		BufferedImage icon32 = loadImage("icons/32x32.png");
 		BufferedImage icon128 = loadImage("icons/128x128.png");
@@ -285,126 +299,105 @@ public class Fluxagon implements Constants {
 		// init openAL
 		SoundPlayer.init(SOUND_FILE_NAMES);
 
+		// load textures
+		texEmpty = loadTexture("PNG", "gfx/menu/empty.png");
+		texPlay = loadTexture("PNG", "gfx/menu/play.png");
+		texReset = loadTexture("PNG", "gfx/menu/reset.png");
+		texMute = loadTexture("PNG", "gfx/menu/mute.png");
+		texUnmute = loadTexture("PNG", "gfx/menu/unmute.png");
+		texQuit = loadTexture("PNG", "gfx/menu/quit.png");
+		texLogoBlack = loadTexture("PNG", "gfx/menu/logo_black.png");
+
 		Display.setTitle(WINDOW_TITLE);
 	}
 
+	private Texture loadTexture(String format, String resName) {
+		Texture tex = null;
+		try {
+			tex = TextureLoader.getTexture(format,
+					ResourceLoader.getResourceAsStream(resName));
+			System.out.println("Texture loaded: " + resName + " as " + format + ">> ID " + tex.getTextureID());
+		} catch (IOException e) {
+			System.out.println("FILE NOT FOUND: " + resName);
+		}
+		return tex;
+	}
+
 	private void initMenu() {
-		GlColor labelColor = new GlColor(0.3, 0.3, 0.3, 0);
-		// Menu root
-		guiRoot = new MenuItem(0, 0, windowWidth, windowHeight);
-		guiRoot.setBackgroundColor(new GlColor(0, 0, 0, 0));
+		// Calculate hexagon width and height
+		HexMenuItem.width = windowWidth / 10;
+		// Weite sollte halbierbar sein
+		if (HexMenuItem.width % 2 != 0) {
+			HexMenuItem.width++;
+		}
+		HexMenuItem.height = Math.round(HexMenuItem.width * 2 / (float) Math.sqrt(3));
+		
 		// Main menu
-		guiMain = new MenuItem(windowWidth / 3, windowHeight / 2 - 135,
-				windowWidth / 3, 270);
-		guiMain.setBackgroundColor(new GlColor(0, 0, 0, 0.8));
-		guiRoot.add(guiMain);
-		// Resume button
-		MenuItem item = new MenuItem(0, 20, windowWidth / 3, 30) {
+		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
+		menuMain.add(new HexMenuItem(-0.5f, -0.75f, texPlay) {
 			@Override
 			public void click() {
-				guiMain.setVisible(false);
+				menuMain.setVisible(false);
+				menuOptions.setVisible(false);
 			}
-		};
-		item.setText("Resume");
-		item.setBackgroundColor(labelColor);
-		guiMain.add(item);
-		// Restart button
-		item = new MenuItem(0, 70, windowWidth / 3, 30) {
+		});
+		menuMain.add(new HexMenuItem(0.5f, -0.75f, texReset) {
 			@Override
 			public void click() {
 				initGame();
-				guiMain.setVisible(false);
+				menuMain.setVisible(false);
+				menuOptions.setVisible(false);
 			}
-		};
-		item.setText("Restart");
-		item.setBackgroundColor(labelColor);
-		guiMain.add(item);
-		// Mute button
-		item = new MenuItem(0, 120, windowWidth / 3, 30) {
+		});
+		menuMain.add(new HexMenuItem(-1, 0, texEmpty));
+		menuMain.add(new HexMenuItem(0, 0, texLogoBlack));
+		menuMain.add(new HexMenuItem(1, 0, texEmpty) {
+			@Override
+			public void click() {
+				if (menuOptions.isVisible()) {
+					menuOptions.setVisible(false);
+				} else {
+					menuOptions.setVisible(true);
+				}
+			}
+		});
+		menuMain.add(new HexMenuItem(-0.5f, 0.75f, texUnmute) {
 			@Override
 			public void click() {
 				SoundPlayer.toggleMute();
 				if (SoundPlayer.isMuted()) {
-					setText("Unmute");
+					setTexture(texMute);
 				} else {
-					setText("Mute");
+					setTexture(texUnmute);
 				}
 			}
-		};
-		if (SoundPlayer.isMuted()) {
-			item.setText("Unmute");
-		} else {
-			item.setText("Mute");
-		}
-		item.setBackgroundColor(labelColor);
-		guiMain.add(item);
-		// Options button
-		item = new MenuItem(0, 170, windowWidth / 3, 30) {
-			@Override
-			public void click() {
-				guiMain.setVisible(false);
-				guiOptions.setVisible(true);
-			}
-		};
-		item.setText("Options");
-		item.setBackgroundColor(labelColor);
-		guiMain.add(item);
-		// Quit button
-		item = new MenuItem(0, 220, windowWidth / 3, 30) {
+		});
+		menuMain.add(new HexMenuItem(0.5f, 0.75f, texQuit) {
 			@Override
 			public void click() {
 				running = false;
 			}
-		};
-		item.setText("Quit");
-		item.setBackgroundColor(labelColor);
-		guiMain.add(item);
+		});
 		// Options menu
-		guiOptions = new MenuItem(windowWidth / 3, windowHeight / 2 - 110,
-				windowWidth / 3, 220);
-		guiRoot.add(guiOptions);
-		guiOptions.setVisible(false);
-		// Back button
-		item = new MenuItem(0, 20, windowWidth / 3, 30) {
-			@Override
-			public void click() {
-				guiOptions.setVisible(false);
-				guiMain.setVisible(true);
-			}
-		};
-		item.setText("Back");
-		item.setBackgroundColor(labelColor);
-		guiOptions.add(item);
-		// 600 button
-		item = new MenuItem(0, 70, windowWidth / 3, 30) {
+		menuOptions = new HexMenu(windowWidth / 2, windowHeight / 2, false);
+		menuOptions.add(new HexMenuItem(1.5f, -0.75f, texEmpty) {
 			@Override
 			public void click() {
 				setDisplay(600);
 			}
-		};
-		item.setText("600 x " + (int) (600 / ASPECT_RATIO));
-		item.setBackgroundColor(labelColor);
-		guiOptions.add(item);
-		// 1000 button
-		item = new MenuItem(0, 120, windowWidth / 3, 30) {
+		});
+		menuOptions.add(new HexMenuItem(2, 0, texEmpty) {
 			@Override
 			public void click() {
-				setDisplay(1000);
+				setDisplay(900);
 			}
-		};
-		item.setText("1000 x " + (int) (1000 / ASPECT_RATIO));
-		item.setBackgroundColor(labelColor);
-		guiOptions.add(item);
-		// 1200 button
-		item = new MenuItem(0, 170, windowWidth / 3, 30) {
+		});
+		menuOptions.add(new HexMenuItem(1.5f, 0.75f, texEmpty) {
 			@Override
 			public void click() {
 				setDisplay(1200);
 			}
-		};
-		item.setText("1200 x " + (int) (1200 / ASPECT_RATIO));
-		item.setBackgroundColor(labelColor);
-		guiOptions.add(item);
+		});
 	}
 
 	private void saveSettings() {
@@ -477,10 +470,12 @@ public class Fluxagon implements Constants {
 						paused = paused ? false : true;
 					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
-					if (guiMain.isVisible()) {
-						guiMain.setVisible(false);
+					if (menuOptions.isVisible()) {
+						menuOptions.setVisible(false);
+					} else if (menuMain.isVisible()) {
+						menuMain.setVisible(false);
 					} else {
-						guiMain.setVisible(true);
+						menuMain.setVisible(true);
 					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
 					capFPS = capFPS ? false : true;
@@ -503,14 +498,10 @@ public class Fluxagon implements Constants {
 	private void processMouse() {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
-				MenuItem item;
-				if ((item = guiRoot.pickItem(Mouse.getEventX(), windowHeight - Mouse.getEventY())) != guiRoot) {
-					if (item != null) {
-						item.click();
-					}
-					return;
-				}
-				if (Mouse.getEventButton() == 0) {
+				if (isMenuOpen()) {
+					menuMain.click(Mouse.getEventX(), windowHeight - Mouse.getEventY());
+					menuOptions.click(Mouse.getEventX(), windowHeight - Mouse.getEventY());
+				} else if (Mouse.getEventButton() == 0) {
 					if (!isGamePaused()) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
 						if (hex != null && !hex.isConnected()) {
@@ -606,15 +597,17 @@ public class Fluxagon implements Constants {
 		}
 
 		// game over and pause messages
-		if (!guiMain.isVisible()) {
+		if (!isMenuOpen()) {
 			if (isOver) {
 				glTranslatef(0, windowHeight / 2 - 30, 0);
+				glColor4d(0, 0, 0, 0.75);
 				Renderer.drawQuad(windowWidth, 60);
 				glTranslatef(0, -windowHeight / 2 + 30, 0);
 				Renderer.drawText("Game over :/",
 						windowWidth / 2, windowHeight / 2, true);
 			} else if (paused) {
 				glTranslatef(0, windowHeight / 2 - 30, 0);
+				glColor4d(0, 0, 0, 0.75);
 				Renderer.drawQuad(windowWidth, 60);
 				glTranslatef(0, -windowHeight / 2 + 30, 0);
 				Renderer.drawText("Paused",
@@ -628,12 +621,27 @@ public class Fluxagon implements Constants {
 
 		// Menu
 		glLoadIdentity();
-		guiRoot.drawAll();
+		if (menuMain.isVisible()) {
+			glColor4d(0, 0, 0, 0.4);
+			Renderer.drawQuad(windowWidth, windowHeight);
+			if (menuOptions.isVisible()) {
+				glColor4d(0.75, 0.75, 0.75, 1);
+				menuMain.render(0, 0);
+				Color.white.bind();
+				menuOptions.render(0, 0);
+			} else {
+				Color.white.bind();
+				menuMain.render(0, 0);
+			}
+		}
 	}
 
 	public boolean isGamePaused() {
-		return paused || isOver || (guiMain != null && guiMain.isVisible())
-				|| (guiOptions != null && guiOptions.isVisible());
+		return paused || isOver || isMenuOpen();
+	}
+
+	public boolean isMenuOpen() {
+		return (menuMain != null && menuMain.isVisible());
 	}
 
 	/**

@@ -35,17 +35,17 @@ public interface Constants {
 	/** Farbdefinitionen für die Hexagone */
 	public static final GlColor[] COLOR_HEXAGON = {
 		/* 0 orange */new GlColor(1, 0.6, 0.1),
-		/* 1 blau   */ GlColor.from255(62, 116, 237),
-		/* 2 grün   */ GlColor.from255(63, 174, 72),
-		/* 3 türkis */ GlColor.from255(76, 160, 124),
-		/* 4 magenta*/ GlColor.from255(110, 58, 81)};
+		/* 1 blau   */ GlColor.fromByte(62, 116, 237),
+		/* 2 grün   */ GlColor.fromByte(63, 174, 72),
+		/* 3 türkis */ GlColor.fromByte(76, 160, 124),
+		/* 4 magenta*/ GlColor.fromByte(110, 58, 81)};
 	/** Farbdefinition für den Vordergrund der Lanes */
 	public static final GlColor[] COLOR_LINE_FG = {
 		/* 0 */new GlColor(0, 0.8, 0.1),
-		/* 1 */ GlColor.from255(188, 0, 166),
-		/* 2 */ GlColor.from255(66, 88, 137),
-		/* 3 */ GlColor.from255(74, 62, 134),
-		/* 4 */ GlColor.from255(159, 177, 40)};
+		/* 1 */ GlColor.fromByte(188, 0, 166),
+		/* 2 */ GlColor.fromByte(66, 88, 137),
+		/* 3 */ GlColor.fromByte(74, 62, 134),
+		/* 4 */ GlColor.fromByte(159, 177, 40)};
 	/** Farbdefinition für den Hintergrund der Lanes */
 	public static final GlColor COLOR_LINE_BG = new GlColor(0.5, 0.5, 0.5, 0.7);
 	/** Zeit zwischen zwei Update-Durchgängen */

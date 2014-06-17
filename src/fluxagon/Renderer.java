@@ -8,6 +8,7 @@ import java.awt.Font;
 import static org.lwjgl.opengl.GL11.*;
 import org.newdawn.slick.Color;
 import org.newdawn.slick.TrueTypeFont;
+import org.newdawn.slick.opengl.Texture;
 
 /**
  *
@@ -81,11 +82,11 @@ public class Renderer {
 			glPopMatrix();
 		}
 	}
-	
+
 	public static void drawText(String text, int x, int y) {
 		drawText(text, x, y, false, false);
 	}
-	
+
 	public static void drawText(String text, int x, int y, boolean center) {
 		drawText(text, x, y, center, false);
 	}
@@ -106,12 +107,37 @@ public class Renderer {
 	 * @param height Höhe des Rechtecks
 	 */
 	public static void drawQuad(int width, int height) {
-		backgroundColor.bind();
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);
 		glVertex2i(0, height);
 		glVertex2i(width, height);
 		glVertex2i(width, 0);
+		glEnd();
+	}
+
+	public static void drawTexture(Texture tex) {
+		drawTexture(tex, -1, -1);
+	}
+
+	public static void drawTexture(Texture tex, int width, int height) {
+		if (width < 0) {
+			width = tex.getImageWidth();
+		}
+		if (height < 0) {
+			height = tex.getImageHeight();
+		}
+		tex.bind();
+		float right = tex.getImageWidth() / (float) tex.getTextureWidth();
+		float bottom = tex.getImageHeight() / (float) tex.getTextureHeight();
+		glBegin(GL_QUADS);
+		glTexCoord2f(0, 0);
+		glVertex2f(0, 0);
+		glTexCoord2f(right, 0);
+		glVertex2f(width, 0);
+		glTexCoord2f(right, bottom);
+		glVertex2f(width, height);
+		glTexCoord2f(0, bottom);
+		glVertex2f(0, height);
 		glEnd();
 	}
 }
