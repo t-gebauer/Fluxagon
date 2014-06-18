@@ -4,6 +4,7 @@
  */
 package hexmenu;
 
+import fluxagon.GlColor;
 import java.util.ArrayList;
 import org.lwjgl.opengl.GL11;
 
@@ -30,9 +31,9 @@ public class HexMenu {
 	}
 
 	public void setVisible(boolean visible) {
-		if (visible) {
+		if (!this.isVisible() && visible) {
 			animTime = 0;
-		} else {
+		} else if (this.isVisible() && !visible) {
 			animTime = -1;
 //			if (hexList != null) {
 //				animTime = TIME_PER_HEX * hexList.size();
@@ -75,6 +76,12 @@ public class HexMenu {
 		for (int i = 0; i < hexList.size(); i++) {
 			if (animTime < i * TIME_PER_HEX) {
 				break;
+			} else if (animTime < (i + 1) * TIME_PER_HEX) {
+				float fade = (float) (animTime - (i * TIME_PER_HEX))
+						/ TIME_PER_HEX;
+				HexMenuItem.setColor(new GlColor(1, 1, 1, fade));
+				hexList.get(i).draw();
+				HexMenuItem.setColor(GlColor.white());
 			}
 			hexList.get(i).draw();
 		}

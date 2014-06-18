@@ -376,6 +376,12 @@ public class Fluxagon implements Constants {
 				}
 			}
 		});
+		menuMain.add(new HexMenuItem(0.5f, 0.75f, texQuit) {
+			@Override
+			public void click() {
+				running = false;
+			}
+		});
 		menuMain.add(new HexMenuItem(-0.5f, 0.75f,
 				(SoundPlayer.isMuted() ? texMute : texUnmute)) {
 			@Override
@@ -387,12 +393,6 @@ public class Fluxagon implements Constants {
 					setTexture(texUnmute);
 				}
 				saveSettings();
-			}
-		});
-		menuMain.add(new HexMenuItem(0.5f, 0.75f, texQuit) {
-			@Override
-			public void click() {
-				running = false;
 			}
 		});
 		// Options menu
@@ -615,6 +615,11 @@ public class Fluxagon implements Constants {
 		// highscore
 		if (isOver) {
 			Renderer.drawText(9, 50 + 9, "Highscore: " + (int) highscore);
+		}
+
+		// score popups
+		if (!isWaitingToStart()) {
+			TextPopup.renderAll();
 		}
 
 		// game over and pause messages

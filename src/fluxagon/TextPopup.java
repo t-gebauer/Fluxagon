@@ -50,7 +50,7 @@ public class TextPopup {
 	private void render() {
 		Renderer.setFont(Constants.FONT_POPUP);
 		Renderer.setFontColor(Color.yellow);
-		Renderer.drawText(text, Math.round(x), Math.round(y - offset), true);
+		Renderer.drawText(Math.round(x), Math.round(y - offset), text, 0.5f, 0.5f);
 		Renderer.setFontColor(Color.white);
 		Renderer.setFont(0);
 	}
