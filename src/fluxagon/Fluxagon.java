@@ -17,13 +17,14 @@ import java.nio.ByteBuffer;
 import javax.imageio.ImageIO;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
+import org.lwjgl.input.Cursor;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import static org.lwjgl.opengl.GL11.*;
 import org.lwjgl.opengl.PixelFormat;
-import org.newdawn.slick.Color;
+import org.newdawn.slick.opengl.CursorLoader;
 import org.newdawn.slick.opengl.ImageIOImageData;
 import org.newdawn.slick.opengl.Texture;
 import org.newdawn.slick.opengl.TextureLoader;
@@ -81,6 +82,13 @@ public class Fluxagon implements Constants {
 	private Texture texResSmall;
 	private Texture texResMiddle;
 	private Texture texResBig;
+	private HexMenu menuReplay;
+	private boolean loadFaderActive = true;
+	private long loadFadeTime;
+	private boolean loadTimeElapsed = false;
+	private long loadTime;
+	private Texture texLoading;
+	private Cursor cursorHand;
 
 	public int getWindowWidth() {
 		return windowWidth;
@@ -190,6 +198,7 @@ public class Fluxagon implements Constants {
 	}
 
 	private void init() {
+		loadTime = getTime();
 		loadSettings();
 		calculateDisplay(windowWidth);
 		try {
@@ -214,9 +223,9 @@ public class Fluxagon implements Constants {
 		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
 
-		BufferedImage icon16 = loadImage("icons/16x16.png");
-		BufferedImage icon32 = loadImage("icons/32x32.png");
-		BufferedImage icon128 = loadImage("icons/128x128.png");
+		BufferedImage icon16 = loadImage("gfx/icons/16x16.png");
+		BufferedImage icon32 = loadImage("gfx/icons/32x32.png");
+		BufferedImage icon128 = loadImage("gfx/icons/128x128.png");
 		if (icon16 != null && icon32 != null && icon128 != null) {
 			Display.setIcon(new ByteBuffer[]{
 				new ImageIOImageData().imageToByteBuffer(icon16, false, false, null),
@@ -293,6 +302,11 @@ public class Fluxagon implements Constants {
 	 */
 	private void initResources() {
 		Display.setTitle("loading Resources");
+		texLoading = loadTexture("PNG", "gfx/logo/logo.png");
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glColor4d(1, 1, 1, 1);
+		renderLoadingTexture(1);
+		Display.update();
 
 		// init renderer-helper-class
 		Renderer.init(FONT_LIST);
@@ -313,6 +327,13 @@ public class Fluxagon implements Constants {
 		texResMiddle = loadTexture("PNG", "gfx/menu/resolution_middle.png");
 		texResBig = loadTexture("PNG", "gfx/menu/resolution_big.png");
 
+		// load cursor
+		try {
+			cursorHand = CursorLoader.get().getCursor("gfx/cursors/hand.png", 7, 0);
+		} catch (IOException | LWJGLException e) {
+			e.printStackTrace();
+		}
+
 		Display.setTitle(WINDOW_TITLE);
 	}
 
@@ -328,18 +349,21 @@ public class Fluxagon implements Constants {
 		return tex;
 	}
 
+	private void renderLoadingTexture(float scale) {
+		int width = Math.round(windowWidth / 3 * scale);
+		int height = width * texLoading.getImageHeight() / texLoading.getImageWidth();
+		glTranslatef(windowWidth / 2, windowHeight / 2, 0);
+		glRotated(-scale * 360, 0, 0, 1);
+		glTranslatef(-width / 2, -height / 2, 0);
+		Renderer.drawTexture(texLoading, width, height);
+	}
+
 	private void initMenu() {
-		// Calculate hexagon width and height
-		int width = windowWidth / 9;
-		// Weite sollte halbierbar sein
-		if (width % 2 != 0) {
-			width++;
-		}
-		int height = Math.round(width * 2 / (float) Math.sqrt(3));
-		HexMenuItem.init(width, height, texEmpty, COLOR_HEXAGON[getHexColorIndex()]);
+		HexMenuItem.init(texEmpty);
 
 		// Main menu
 		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
+		menuMain.setSize(windowWidth / 9);
 		menuMain.add(new HexMenuItem(0, 0, texFlxgn, false));
 		menuMain.add(new HexMenuItem(-1, 0, null) {
 			@Override
@@ -397,6 +421,7 @@ public class Fluxagon implements Constants {
 		});
 		// Options menu
 		menuOptions = new HexMenu(windowWidth / 2, windowHeight / 2, false);
+		menuOptions.setSize(windowWidth / 9);
 		menuOptions.add(new HexMenuItem(1.5f, -0.75f, texResSmall) {
 			@Override
 			public void click() {
@@ -413,6 +438,17 @@ public class Fluxagon implements Constants {
 			@Override
 			public void click() {
 				setDisplay(1200);
+			}
+		});
+
+		// Replay menu
+		menuReplay = new HexMenu(2 * windowWidth / 3, windowHeight / 2, false);
+		menuReplay.setSize(50);
+		menuReplay.add(new HexMenuItem(0, 0, texReset) {
+			@Override
+			public void click() {
+				initGame();
+				menuReplay.setVisible(false);
 			}
 		});
 	}
@@ -516,8 +552,10 @@ public class Fluxagon implements Constants {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				if (isMenuOpen()) {
-					menuMain.click(Mouse.getEventX(), windowHeight - Mouse.getEventY());
-					menuOptions.click(Mouse.getEventX(), windowHeight - Mouse.getEventY());
+					menuMain.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
+					menuOptions.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
+				} else if (isOver) {
+					menuReplay.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
 				} else if (Mouse.getEventButton() == 0) {
 					if (!isGamePaused()) {
 						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
@@ -573,6 +611,7 @@ public class Fluxagon implements Constants {
 					if (!isOver) {
 						SoundPlayer.playSound(SOUND_GAME_OVER);
 						isOver = true;
+						menuReplay.setVisible(true);
 						if (score > highscore) {
 							highscore = score;
 							saveSettings();
@@ -585,12 +624,29 @@ public class Fluxagon implements Constants {
 		map.animate();
 		menuMain.animate((int) UPDATE_TIME);
 		menuOptions.animate((int) UPDATE_TIME);
+		menuReplay.animate((int) UPDATE_TIME);
 	}
 
 	private void render() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_TEXTURE_2D);
+
+		// min loading time
+		if (!loadTimeElapsed) {
+			if (getTime() - loadTime <= 2000) {
+				glColor4f(1, 1, 1, 1);
+				glLoadIdentity();
+				renderLoadingTexture(1);
+			} else {
+				loadTimeElapsed = true;
+				// Start fading
+				loadFadeTime = getTime();
+			}
+			return;
+		}
+
 		map.render();
+		tryToSetCursor(null);
 
 		// render text
 		glLoadIdentity();
@@ -643,20 +699,57 @@ public class Fluxagon implements Constants {
 					0.5f, 1);
 		}
 
+		menuMain.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
+		menuOptions.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
+		menuReplay.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
+
+		// replay button
+		if (!isMenuOpen() && isOver) {
+			menuReplay.setColor(GlColor.white());
+			if (menuReplay.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+				tryToSetCursor(cursorHand);
+			}
+		}
+
 		// Menu
 		glLoadIdentity();
 		if (menuMain.isVisible()) {
 			glColor4d(0, 0, 0, 0.4);
 			Renderer.drawQuad(windowWidth, windowHeight);
 		}
-		HexMenuItem.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
+
 		if (menuOptions.isVisible()) {
-			HexMenuItem.setColor(new GlColor(0.75, 0.75, 0.75, 1));
-			menuMain.render(0, 0);
-			HexMenuItem.setColor(GlColor.white());
-			menuOptions.render(0, 0);
+			menuMain.setColor(new GlColor(0.75, 0.75, 0.75, 1));
+			menuMain.render(-1, -1);
+			menuOptions.setColor(GlColor.white());
+			if (menuOptions.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+				tryToSetCursor(cursorHand);
+			}
 		} else {
-			menuMain.render(0, 0);
+			menuMain.setColor(GlColor.white());
+			if (menuMain.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+				tryToSetCursor(cursorHand);
+			}
+		}
+
+		if (loadFaderActive) {
+			final int fadeTime = 500;
+			final long timeDelta = getTime() - loadFadeTime;
+			if (timeDelta <= fadeTime) {
+				glColor4f(1, 1, 1, 1 - (timeDelta / (float) fadeTime));
+				glLoadIdentity();
+				renderLoadingTexture(1 - (timeDelta / (float) fadeTime));
+			} else {
+				loadFaderActive = false;
+			}
+		}
+	}
+
+	public void tryToSetCursor(Cursor cursor) {
+		try {
+			Mouse.setNativeCursor(cursor);
+		} catch (LWJGLException e) {
+			e.printStackTrace();
 		}
 	}
 

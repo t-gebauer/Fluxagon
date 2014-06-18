@@ -47,11 +47,11 @@ public interface Constants {
 		/* 3 */ GlColor.fromHex(0xAA6A39),
 		/* 4 */ GlColor.fromByte(159, 177, 40)};
 	/** Farbdefinition für den Hintergrund der Lanes */
-	public static final GlColor COLOR_LINE_BG = new GlColor(0.5, 0.5, 0.5, 0.7);
+	public static final GlColor COLOR_LINE_BG = new GlColor(0.6, 0.6, 0.6, 0.75);
 	/** Zeit zwischen zwei Update-Durchgängen */
 	public static final long UPDATE_TIME = 40;
 	/** Zeit bis zum Start des Spiels (in ms) */
-	public static final int STARTUP_TIME = 5000;
+	public static final int STARTUP_TIME = 3000;
 	/** Punkte bis zum nächsten Level (Level * LEVEL_POINTS) */
 	public static final int LEVEL_POINTS = 600;
 	/** Punkte pro verbundenes Feld */

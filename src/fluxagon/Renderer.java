@@ -107,6 +107,9 @@ public class Renderer {
 	 * @param height Höhe des Rechtecks
 	 */
 	public static void drawQuad(int width, int height) {
+		if (glIsEnabled(GL_TEXTURE_2D)) {
+			glDisable(GL_TEXTURE_2D);
+		}
 		glBegin(GL_QUADS);
 		glVertex2i(0, 0);
 		glVertex2i(0, height);
@@ -120,6 +123,9 @@ public class Renderer {
 	}
 
 	public static void drawTexture(Texture tex, int width, int height) {
+		if (!glIsEnabled(GL_TEXTURE_2D)) {
+			glEnable(GL_TEXTURE_2D);
+		}
 		if (width < 0) {
 			width = tex.getImageWidth();
 		}
