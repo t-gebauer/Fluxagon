@@ -536,8 +536,6 @@ public class Fluxagon implements Constants {
 					initGame();
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_C) {
 					circleMode = circleMode ? false : true;
-				} else if (Keyboard.getEventKey() == Keyboard.KEY_M) {
-					SoundPlayer.toggleMute();
 				}
 			} else {
 				// Key Release
@@ -646,7 +644,7 @@ public class Fluxagon implements Constants {
 		}
 
 		map.render();
-		tryToSetCursor(null);
+		Cursor cursor = null;
 
 		// render text
 		glLoadIdentity();
@@ -707,7 +705,7 @@ public class Fluxagon implements Constants {
 		if (!isMenuOpen() && isOver) {
 			menuReplay.setColor(GlColor.white());
 			if (menuReplay.render(Mouse.getX(), windowHeight - Mouse.getY())) {
-				tryToSetCursor(cursorHand);
+				cursor = cursorHand;
 			}
 		}
 
@@ -723,13 +721,17 @@ public class Fluxagon implements Constants {
 			menuMain.render(-1, -1);
 			menuOptions.setColor(GlColor.white());
 			if (menuOptions.render(Mouse.getX(), windowHeight - Mouse.getY())) {
-				tryToSetCursor(cursorHand);
+				cursor = cursorHand;
 			}
 		} else {
 			menuMain.setColor(GlColor.white());
 			if (menuMain.render(Mouse.getX(), windowHeight - Mouse.getY())) {
-				tryToSetCursor(cursorHand);
+				cursor = cursorHand;
 			}
+		}
+
+		if (Mouse.getNativeCursor() != cursor) {
+			tryToSetCursor(cursor);
 		}
 
 		if (loadFaderActive) {
