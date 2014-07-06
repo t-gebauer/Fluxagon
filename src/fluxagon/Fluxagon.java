@@ -194,14 +194,36 @@ public class Fluxagon implements Constants {
 		}
 		int width = Math.round(height * aspectRatio);
 		initMenu();
+		System.out.println("Setting display mode: " + width + ":" + height + " fs: " + fullscreen);
 		setDisplayMode(width, height, fullscreen);
 		realWindowWidth = Display.getDisplayMode().getWidth();
 		realWindowHeight = Display.getDisplayMode().getHeight();
 		if (!Display.isCreated()) {
 			try {
 				Display.create(new PixelFormat().withSamples(8));
+				System.out.println("Display created with 8 samples.");
 			} catch (LWJGLException e) {
 				System.out.println("ERROR: Failed to create display.");
+				System.out.println(e);
+			}
+		}
+		if (!Display.isCreated()) {
+			try {
+				Display.create(new PixelFormat().withSamples(4));
+				System.out.println("Display created with 4 samples.");
+			} catch (LWJGLException e) {
+				System.out.println("ERROR: Failed to create display.");
+				System.out.println(e);
+			}
+		}
+		if (!Display.isCreated()) {
+			try {
+				Display.create();
+				System.out.println("Display created without samples.");
+			} catch (LWJGLException e) {
+				System.out.println("ERROR: Failed to create display.");
+				System.out.println(e);
+				System.exit(1);
 			}
 		}
 		glViewport(0, 0, width, height);
@@ -269,7 +291,6 @@ public class Fluxagon implements Constants {
 			});
 		}
 
-		System.out.println("Setting display mode: " + realWindowWidth + " fs: " + fullscreen);
 		setDisplay(displaySetting);
 
 		// calculate windowHeight and hex size
@@ -624,7 +645,6 @@ public class Fluxagon implements Constants {
 			System.out.println("-- Saved");
 		} catch (IOException e) {
 			System.out.println("!! Failed");
-			System.out.println(e);
 		}
 	}
 
@@ -643,7 +663,6 @@ public class Fluxagon implements Constants {
 			System.out.println("-- Loaded");
 		} catch (IOException e) {
 			System.out.println("!! Failed");
-			System.out.println(e);
 		}
 	}
 
