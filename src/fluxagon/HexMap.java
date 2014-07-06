@@ -12,7 +12,7 @@ import java.util.Random;
  */
 public class HexMap implements Constants {
 
-	private float animationOffset = 0;
+	private float animationOffset;
 	/** Boolean flag on whether odd or even Lanes are indented */
 	private boolean indentOdd = false;
 	private Hexagon[][] hexagons;
@@ -25,6 +25,7 @@ public class HexMap implements Constants {
 
 	public HexMap(Fluxagon main) {
 		this.main = main;
+		this.animationOffset = main.getHexHeight() * FIRST_ROW * 1.5f;
 	}
 
 	public void init(int rows, int colums) {
@@ -33,14 +34,14 @@ public class HexMap implements Constants {
 		hexOffsetX = (main.getWindowWidth()
 				- (main.getHexWidth() * (2 * columnCount + 1))) / 2;
 		hexagons = new Hexagon[rows][colums];
-		for (int i = 1; i < rowCount; i++) {
+		for (int i = FIRST_ROW; i < rowCount; i++) {
 			for (int j = 0; j < columnCount; j++) {
 				hexagons[i][j] = new Hexagon(main, i, j);
 			}
 		}
-		wayColumn = hexagons[rowCount / 4][columnCount / 2]
+		wayColumn = hexagons[FIRST_ROW + 2][columnCount / 2]
 				.createWay(null, random);
-		hexagons[rowCount / 4][columnCount / 2].connectMid();
+		hexagons[FIRST_ROW + 2][columnCount / 2].connectMid();
 	}
 
 	/**
@@ -130,13 +131,15 @@ public class HexMap implements Constants {
 	 */
 	public void scroll() {
 		animationOffset += main.getHexHeight() * BASE_SCROLL_SPEED * Math.pow(LEVEL_SCROLL_SPEED, main.getLevel());
-		if (animationOffset >= 1.5 * main.getHexHeight()) {
-			animationOffset = 0;
+		if (animationOffset >= (FIRST_ROW + 1) * 1.5 * main.getHexHeight()) {
+			animationOffset = main.getHexHeight() * 1.5f * FIRST_ROW;
 			indentOdd = !indentOdd;
 			for (int i = 0; i < rowCount - 1; i++) {
 				hexagons[i] = hexagons[i + 1];
 				for (int k = 0; k < columnCount; k++) {
-					hexagons[i][k].setRow(i);
+					if (hexagons[i][k] != null) {
+						hexagons[i][k].setRow(i);
+					}
 				}
 			}
 			hexagons[rowCount - 1] = new Hexagon[columnCount];
@@ -184,5 +187,10 @@ public class HexMap implements Constants {
 				}
 			}
 		}
+	}
+
+	public double getFluxInc(int row) {
+		return BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel())
+				* (1 - (float) (row-FIRST_ROW) / VISIBLE_ROWS);
 	}
 }

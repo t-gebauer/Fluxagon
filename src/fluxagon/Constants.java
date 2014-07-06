@@ -14,20 +14,20 @@ public interface Constants {
 
 	/** Der Titel des Fensters */
 	public static final String WINDOW_TITLE = "Fluxagon";
-	/** Seitenverhältnis */
-	public static final float ASPECT_RATIO = 16 / 9f;
 	/** Anzahl der horizontalen Spalten */
 	public static final int COLUMN_COUNT = 5;
 	/** Anzahl der Reihen */
-	public static final int ROW_COUNT = 10;
+	public static final int ROW_COUNT = 20;
 	/** Anzahl der sichtbaren Reihen */
 	public static final int VISIBLE_ROWS = 6;
+	/** erste sichtbare Reihe */
+	public static final int FIRST_ROW = 10;
 	/** Wahrscheinlichkeit für das Entstehen einer Lane */
 	public static final float LANE_PROBABILITY = 0.4f;
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final double BASE_FLUX_SPEED = 0.025;
+	public static final double BASE_FLUX_SPEED = 0.04;
 	public static final double LEVEL_FLUX_SPEED = 1.044;
 	/** Scrollgeschwindigkeit der Map */
 	public static final double BASE_SCROLL_SPEED = 0.011;

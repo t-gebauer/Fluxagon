@@ -106,6 +106,7 @@ public class HexMenu {
 				if (hexList.get(i).pick(relX, relY)) {
 					mouseOver = true;
 					hexList.get(i).setHexColor(hexList.get(i).getBackgroundColor().mult(0.9));
+					hexList.get(i).mouseOver();
 				}
 				hexList.get(i).draw();
 			}

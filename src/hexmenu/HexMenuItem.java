@@ -130,4 +130,7 @@ public class HexMenuItem {
 			goalRotation = rotation;
 		}
 	}
+
+	public void mouseOver() {
+	}
 }

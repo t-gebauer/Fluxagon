@@ -179,7 +179,7 @@ public class Hexagon implements Constants {
 				}
 				if (l.isInConnected() && l.getInOut() < 1) {
 					main.incScore(0.03125);
-					l.incIn(BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel()));
+					l.incIn(main.getMap().getFluxInc(row));
 					if (l.getIn() == 1) {
 						// alle anderen Triangles "infizieren"
 						connectMid();
@@ -187,7 +187,7 @@ public class Hexagon implements Constants {
 				}
 				if (l.isOutConnected() && l.getInOut() < 1) {
 					main.incScore(0.03125);
-					l.incOut(BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel()));
+					l.incOut(main.getMap().getFluxInc(row));
 					if (l.getOut() == 1) {
 						int num = (i + Math.round(goalRotation / 60)) % 6;
 						if (num < 0) {
@@ -262,7 +262,7 @@ public class Hexagon implements Constants {
 		}
 
 		// Falls es sich um das Start-Hexagon handelt
-		if (row == ROW_COUNT / 4 && column == COLUMN_COUNT / 2) {
+		if (row == FIRST_ROW + 2 && column == COLUMN_COUNT / 2) {
 			if (main.isWaitingToStart() && !main.isGamePaused()) {
 				double t = main.getTimeUntilStart() % 1000;
 				brightness = 0.5 + 0.8 * t / 1000;

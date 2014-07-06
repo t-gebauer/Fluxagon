@@ -42,7 +42,7 @@ public class Fluxagon implements Constants {
 	private int frameCount;
 	private long lastFpsTime;
 	private long lastUpdateTime;
-	/** Boolean flag on whether are capped to 60 per second or not */
+	/** Boolean flag on whether fps are capped to 60 per second or not */
 	private boolean capFPS = true;
 	/** Score */
 	private double score = 0;
@@ -89,15 +89,23 @@ public class Fluxagon implements Constants {
 	private long loadTime;
 	private Texture texLoading;
 	private Cursor cursorHand;
+	private int realWindowWidth = Display.getDesktopDisplayMode().getWidth();
+	private int realWindowHeight;
+	private float aspectRatio;
+	private boolean fullscreen = true;
+	/** Display <li>0: small windowed<li>1:medium windowed<li>2:fullscreen */
+	private byte displaySetting = 1;
 
 	public int getWindowWidth() {
 		return windowWidth;
 	}
 
+	/** @return half of the height; the radius */
 	public float getHexHeight() {
 		return hexRadius;
 	}
 
+	/** @return half the width */
 	public float getHexWidth() {
 		return (float) (hexRadius * Math.sqrt(3) / 2);
 	}
@@ -162,23 +170,46 @@ public class Fluxagon implements Constants {
 	}
 
 	private void calculateDisplay(int width) {
-		windowHeight = Math.round(width / ASPECT_RATIO);
+		windowHeight = Math.round(width / aspectRatio);
 		hexRadius = windowHeight / (1.5f * (VISIBLE_ROWS - 1) + 2);
 		windowWidth = width;
-		saveSettings();
 	}
 
-	private void setDisplay(int width) {
-		calculateDisplay(width);
-		Display.destroy();
-		try {
-			initGL();
-		} catch (LWJGLException e) {
-			System.exit(1);
+	/** Resizes the window (without changing any In-Game things (except Menu)) */
+	private void setDisplay(int mode) {
+		int height;
+		switch (mode) {
+			case 0:
+				height = Display.getDesktopDisplayMode().getHeight() / 3;
+				fullscreen = false;
+				break;
+			case 1:
+				height = Display.getDesktopDisplayMode().getHeight() / 2;
+				fullscreen = false;
+				break;
+			default: // 2
+				height = Display.getDesktopDisplayMode().getHeight();
+				fullscreen = true;
+				break;
 		}
-		initResources();
-		initGame();
+		int width = Math.round(height * aspectRatio);
 		initMenu();
+		setDisplayMode(width, height, fullscreen);
+		realWindowWidth = Display.getDisplayMode().getWidth();
+		realWindowHeight = Display.getDisplayMode().getHeight();
+		if (!Display.isCreated()) {
+			try {
+				Display.create(new PixelFormat().withSamples(8));
+			} catch (LWJGLException e) {
+				System.out.println("ERROR: Failed to create display.");
+			}
+		}
+		glViewport(0, 0, width, height);
+		glLineWidth(realWindowHeight / 175f);
+		if (mode != displaySetting) {
+			displaySetting = (byte) mode;
+			saveSettings();
+		}
 	}
 
 	/**
@@ -200,11 +231,10 @@ public class Fluxagon implements Constants {
 	private void init() {
 		loadTime = getTime();
 		loadSettings();
-		calculateDisplay(windowWidth);
 		try {
 			initGL();
 		} catch (LWJGLException e) {
-			e.printStackTrace();
+			System.out.println(e);
 			System.exit(1);
 		}
 		initResources();
@@ -218,9 +248,14 @@ public class Fluxagon implements Constants {
 	 * @throws LWJGLException
 	 */
 	private void initGL() throws LWJGLException {
+		// getting aspect ratio
+		aspectRatio = (float) Display.getDesktopDisplayMode().getWidth()
+				/ Display.getDesktopDisplayMode().getHeight();
+		System.out.println("Aspect Ratio: "
+				+ Display.getDesktopDisplayMode().getWidth() + " / "
+				+ Display.getDesktopDisplayMode().getHeight());
+
 		// Display
-		Display.setDisplayMode(new DisplayMode(windowWidth, windowHeight));
-		Display.setFullscreen(false);
 		Display.setTitle(WINDOW_TITLE);
 
 		BufferedImage icon16 = loadImage("gfx/icons/16x16.png");
@@ -233,7 +268,12 @@ public class Fluxagon implements Constants {
 				new ImageIOImageData().imageToByteBuffer(icon128, false, false, null)
 			});
 		}
-		Display.create(new PixelFormat().withSamples(8));
+
+		System.out.println("Setting display mode: " + realWindowWidth + " fs: " + fullscreen);
+		setDisplay(displaySetting);
+
+		// calculate windowHeight and hex size
+		calculateDisplay(windowWidth);
 
 		// Keyboard
 		Keyboard.create();
@@ -246,7 +286,6 @@ public class Fluxagon implements Constants {
 		glLoadIdentity();
 		glOrtho(0, windowWidth, windowHeight, 0, 1, -1);
 		glMatrixMode(GL_MODELVIEW);
-
 		// Tiefenpuffer
 		glEnable(GL_DEPTH_TEST);
 		glDepthFunc(GL_LEQUAL);
@@ -254,7 +293,6 @@ public class Fluxagon implements Constants {
 		glDepthMask(true);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		glLineWidth(hexRadius / 15);
 
 		// Antialiasing
 		glEnable(GL_LINE_SMOOTH);
@@ -264,6 +302,72 @@ public class Fluxagon implements Constants {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glClearColor(0.17f, 0.17f, 0.17f, 1);
+	}
+
+	/**
+	 * Set the display mode to be used
+	 *
+	 * http://lwjgl.org/wiki/index.php?title=LWJGL_Basics_5_%28Fullscreen%29
+	 *
+	 * @param width The width of the display required
+	 * @param height The height of the display required
+	 * @param fullscreen True if we want fullscreen mode
+	 */
+	public void setDisplayMode(int width, int height, boolean fullscreen) {
+
+		// return if requested DisplayMode is already set
+		if ((Display.getDisplayMode().getWidth() == width)
+				&& (Display.getDisplayMode().getHeight() == height)
+				&& (Display.isFullscreen() == fullscreen)) {
+			return;
+		}
+
+		try {
+			DisplayMode targetDisplayMode = null;
+
+			if (fullscreen) {
+				DisplayMode[] modes = Display.getAvailableDisplayModes();
+				int freq = 0;
+
+				for (int i = 0; i < modes.length; i++) {
+					DisplayMode current = modes[i];
+
+					if ((current.getWidth() == width) && (current.getHeight() == height)) {
+						if ((targetDisplayMode == null) || (current.getFrequency() >= freq)) {
+							if ((targetDisplayMode == null) || (current.getBitsPerPixel() > targetDisplayMode.getBitsPerPixel())) {
+								targetDisplayMode = current;
+								freq = targetDisplayMode.getFrequency();
+							}
+						}
+
+						// if we've found a match for bpp and frequence against the 
+						// original display mode then it's probably best to go for this one
+						// since it's most likely compatible with the monitor
+						if ((current.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel())
+								&& (current.getFrequency() == Display.getDesktopDisplayMode().getFrequency())) {
+							targetDisplayMode = current;
+							break;
+						}
+					}
+				}
+			} else {
+				targetDisplayMode = new DisplayMode(width, height);
+			}
+
+			if (targetDisplayMode == null) {
+				System.out.println("Failed to find value mode: " + width + "x" + height + " fs=" + fullscreen);
+				return;
+			}
+
+			// borderless window
+			System.setProperty("org.lwjgl.opengl.Window.undecorated", "" + fullscreen);
+			Display.setDisplayMode(targetDisplayMode);
+			Display.setFullscreen(fullscreen);
+
+
+		} catch (LWJGLException e) {
+			System.out.println("Unable to setup mode " + width + "x" + height + " fullscreen=" + fullscreen + e);
+		}
 	}
 
 	private BufferedImage loadImage(String filename) {
@@ -331,7 +435,8 @@ public class Fluxagon implements Constants {
 		try {
 			cursorHand = CursorLoader.get().getCursor("gfx/cursors/hand.png", 7, 0);
 		} catch (IOException | LWJGLException e) {
-			e.printStackTrace();
+			System.out.println("ERROR: Failed to load cursor: <hand.png>");
+			System.out.println(e);
 		}
 
 		Display.setTitle(WINDOW_TITLE);
@@ -344,7 +449,7 @@ public class Fluxagon implements Constants {
 					ResourceLoader.getResourceAsStream(resName));
 			System.out.println("Texture loaded: " + resName + " as " + format + ">> ID " + tex.getTextureID());
 		} catch (IOException e) {
-			System.out.println("FILE NOT FOUND: " + resName);
+			System.out.println("ERROR: File not found: " + resName);
 		}
 		return tex;
 	}
@@ -360,11 +465,18 @@ public class Fluxagon implements Constants {
 
 	private void initMenu() {
 		HexMenuItem.init(texEmpty);
+		final int tooltipWidth = windowWidth / 2;
+		final int tooltipHeight = windowHeight * 3 / 4;
 
 		// Main menu
 		menuMain = new HexMenu(windowWidth / 2, windowHeight / 2, true);
-		menuMain.setSize(windowWidth / 9);
-		menuMain.add(new HexMenuItem(0, 0, texFlxgn, false));
+		menuMain.setSize(windowHeight / 6);
+		menuMain.add(new HexMenuItem(0, 0, texFlxgn, false) {
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Fluxagon.. best game ever made!", 0.5f, 0);
+			}
+		});
 		menuMain.add(new HexMenuItem(-1, 0, null) {
 			@Override
 			public void click() {
@@ -379,6 +491,11 @@ public class Fluxagon implements Constants {
 					menuOptions.setVisible(false);
 				}
 			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Resume", 0.5f, 0);
+			}
 		});
 		menuMain.add(new HexMenuItem(0.5f, -0.75f, texReset) {
 			@Override
@@ -388,6 +505,11 @@ public class Fluxagon implements Constants {
 				if (menuOptions.isVisible()) {
 					menuOptions.setVisible(false);
 				}
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Restart", 0.5f, 0);
 			}
 		});
 		menuMain.add(new HexMenuItem(1, 0, texResolution) {
@@ -399,11 +521,21 @@ public class Fluxagon implements Constants {
 					menuOptions.setVisible(true);
 				}
 			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Change Resolution", 0.5f, 0);
+			}
 		});
 		menuMain.add(new HexMenuItem(0.5f, 0.75f, texQuit) {
 			@Override
 			public void click() {
 				running = false;
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Quit", 0.5f, 0);
 			}
 		});
 		menuMain.add(new HexMenuItem(-0.5f, 0.75f,
@@ -418,26 +550,52 @@ public class Fluxagon implements Constants {
 				}
 				saveSettings();
 			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, SoundPlayer.isMuted() ? "Unmute" : "Mute", 0.5f, 0);
+			}
 		});
 		// Options menu
 		menuOptions = new HexMenu(windowWidth / 2, windowHeight / 2, false);
-		menuOptions.setSize(windowWidth / 9);
+		menuOptions.setSize(windowHeight / 6);
 		menuOptions.add(new HexMenuItem(1.5f, -0.75f, texResSmall) {
 			@Override
 			public void click() {
-				setDisplay(600);
+				if (displaySetting != 0) {
+					setDisplay(0);
+				}
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Windowed small", 0.5f, 0);
 			}
 		});
 		menuOptions.add(new HexMenuItem(2, 0, texResMiddle) {
 			@Override
 			public void click() {
-				setDisplay(900);
+				if (displaySetting != 1) {
+					setDisplay(1);
+				}
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Windowed medium", 0.5f, 0);
 			}
 		});
 		menuOptions.add(new HexMenuItem(1.5f, 0.75f, texResBig) {
 			@Override
 			public void click() {
-				setDisplay(1200);
+				if (displaySetting != 2) {
+					setDisplay(2);
+				}
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Fullscreen", 0.5f, 0);
 			}
 		});
 
@@ -455,35 +613,37 @@ public class Fluxagon implements Constants {
 
 	private void saveSettings() {
 		try {
-			System.out.println("Settings -- Saving");
+			System.out.print("Settings ");
 			FileOutputStream fileOut = new FileOutputStream("settings.svd");
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
-			out.writeInt(windowWidth);
+			out.writeByte(displaySetting);
 			out.writeDouble(highscore);
 			out.writeBoolean(SoundPlayer.isMuted());
 			out.close();
 			fileOut.close();
-			System.out.println("Settings -- Saved");
+			System.out.println("-- Saved");
 		} catch (IOException e) {
-			System.out.println("Settings !! Failed");
+			System.out.println("!! Failed");
+			System.out.println(e);
 		}
 	}
 
 	private void loadSettings() {
 		try {
-			System.out.println("Settings -- Loading");
+			System.out.print("Settings ");
 			FileInputStream fileIn = new FileInputStream("settings.svd");
 			ObjectInputStream in = new ObjectInputStream(fileIn);
-			windowWidth = in.readInt();
+			displaySetting = in.readByte();
 			highscore = in.readDouble();
 			if (in.readBoolean()) {
 				SoundPlayer.toggleMute();
 			}
 			in.close();
 			fileIn.close();
-			System.out.println("Settings -- Loaded");
+			System.out.println("-- Loaded");
 		} catch (IOException e) {
-			System.out.println("Settings !! Failed");
+			System.out.println("!! Failed");
+			System.out.println(e);
 		}
 	}
 
@@ -494,7 +654,7 @@ public class Fluxagon implements Constants {
 		lastFpsTime = getTime();
 		lastUpdateTime = getTime();
 		while (running && !Display.isCloseRequested()) {
-			if (Display.isVisible()) {
+			if (Display.isVisible() && Display.isActive()) {
 				processKeyboard();
 				processMouse();
 				update();
@@ -543,6 +703,22 @@ public class Fluxagon implements Constants {
 		}
 	}
 
+	private int getMouseEventX() {
+		return Math.round(Mouse.getEventX() / (float) realWindowWidth * windowWidth);
+	}
+
+	private int getMouseEventY() {
+		return Math.round((realWindowHeight - Mouse.getEventY()) / (float) realWindowHeight * windowHeight);
+	}
+
+	private int getMouseX() {
+		return Math.round(Mouse.getX() / (float) realWindowWidth * windowWidth);
+	}
+
+	private int getMouseY() {
+		return Math.round((realWindowHeight - Mouse.getY()) / (float) realWindowHeight * windowHeight);
+	}
+
 	/**
 	 * Deal with mouse input
 	 */
@@ -550,13 +726,13 @@ public class Fluxagon implements Constants {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				if (isMenuOpen()) {
-					menuMain.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
-					menuOptions.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
+					menuMain.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
+					menuOptions.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
 				} else if (isOver) {
-					menuReplay.click(Mouse.getEventX(), windowHeight - Mouse.getEventY(), Mouse.getEventButton());
+					menuReplay.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
 				} else if (Mouse.getEventButton() == 0) {
 					if (!isGamePaused()) {
-						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
+						Hexagon hex = map.getHexAt(getMouseEventX(), getMouseEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCW();
 							SoundPlayer.playSound(SOUND_CLICK);
@@ -564,7 +740,7 @@ public class Fluxagon implements Constants {
 					}
 				} else if (Mouse.getEventButton() == 1) {
 					if (!isGamePaused()) {
-						Hexagon hex = map.getHexAt(Mouse.getEventX(), windowHeight - Mouse.getEventY());
+						Hexagon hex = map.getHexAt(getMouseEventX(), getMouseEventY());
 						if (hex != null && !hex.isConnected()) {
 							hex.rotateCCW();
 							SoundPlayer.playSound(SOUND_CLICK);
@@ -704,7 +880,7 @@ public class Fluxagon implements Constants {
 		// replay button
 		if (!isMenuOpen() && isOver) {
 			menuReplay.setColor(GlColor.white());
-			if (menuReplay.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+			if (menuReplay.render(getMouseX(), getMouseY())) {
 				cursor = cursorHand;
 			}
 		}
@@ -720,12 +896,12 @@ public class Fluxagon implements Constants {
 			menuMain.setColor(new GlColor(0.75, 0.75, 0.75, 1));
 			menuMain.render(-1, -1);
 			menuOptions.setColor(GlColor.white());
-			if (menuOptions.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+			if (menuOptions.render(getMouseX(), getMouseY())) {
 				cursor = cursorHand;
 			}
 		} else {
 			menuMain.setColor(GlColor.white());
-			if (menuMain.render(Mouse.getX(), windowHeight - Mouse.getY())) {
+			if (menuMain.render(getMouseX(), getMouseY())) {
 				cursor = cursorHand;
 			}
 		}
@@ -751,7 +927,7 @@ public class Fluxagon implements Constants {
 		try {
 			Mouse.setNativeCursor(cursor);
 		} catch (LWJGLException e) {
-			e.printStackTrace();
+			System.out.println("ERROR: Failed to set native cursor.");
 		}
 	}
 

@@ -94,6 +94,7 @@ public class Renderer {
 	public static void drawText(int x, int y, String text, float cX, float cY,
 			boolean background) {
 		glPushMatrix();
+		glLoadIdentity();
 		glTranslatef(x, y, 0);
 		drawText(text, cX, cY, background);
 		glPopMatrix();
