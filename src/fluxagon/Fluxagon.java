@@ -495,13 +495,18 @@ public class Fluxagon implements Constants {
 		menuMain.add(new HexMenuItem(0, 0, texFlxgn, false) {
 			@Override
 			public void mouseOver() {
-				Renderer.drawText(tooltipWidth, tooltipHeight, "Fluxagon.. best game ever made!", 0.5f, 0);
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Fluxagonial!", 0.5f, 0);
 			}
 		});
 		menuMain.add(new HexMenuItem(-1, 0, null) {
 			@Override
 			public void click() {
 				showCredits = showCredits ? false : true;
+			}
+
+			@Override
+			public void mouseOver() {
+				Renderer.drawText(tooltipWidth, tooltipHeight, "Credits", 0.5f, 0);
 			}
 		});
 		menuMain.add(new HexMenuItem(-0.5f, -0.75f, texPlay) {
@@ -745,8 +750,13 @@ public class Fluxagon implements Constants {
 		while (Mouse.next()) {
 			if (Mouse.getEventButtonState()) {
 				if (isMenuOpen()) {
-					menuMain.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
-					menuOptions.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
+					if (menuOptions.isVisible()) {
+						if (!menuOptions.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton())) {
+							menuOptions.setVisible(false);
+						}
+					} else {
+						menuMain.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
+					}
 				} else if (isOver) {
 					menuReplay.click(getMouseEventX(), getMouseEventY(), Mouse.getEventButton());
 				} else if (Mouse.getEventButton() == 0) {

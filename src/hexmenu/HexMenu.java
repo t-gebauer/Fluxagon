@@ -50,9 +50,9 @@ public class HexMenu {
 		this.visible = visible;
 	}
 
-	public void click(int x, int y, int button) {
+	public boolean click(int x, int y, int button) {
 		if (!visible || hexList == null) {
-			return;
+			return false;
 		}
 		for (HexMenuItem item : hexList) {
 			float relX = (x - this.x) / item.getWidth();
@@ -63,9 +63,10 @@ public class HexMenu {
 				} else if (button == 1) {
 					item.rightClick();
 				}
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
 
 	public void animate(int time) {
