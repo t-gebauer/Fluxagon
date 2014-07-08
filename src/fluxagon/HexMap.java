@@ -22,6 +22,8 @@ public class HexMap implements Constants {
 	private Random random = new Random();
 	private int rowCount, columnCount;
 	private float hexOffsetX;
+	/** Position of the start-hexagon */
+	private int startRow, startColumn;
 
 	public HexMap(Fluxagon main) {
 		this.main = main;
@@ -31,6 +33,8 @@ public class HexMap implements Constants {
 	public void init(int rows, int colums) {
 		rowCount = rows;
 		columnCount = colums;
+		startRow = FIRST_ROW + 2;
+		startColumn = columnCount / 2;
 		hexOffsetX = (main.getWindowWidth()
 				- (main.getHexWidth() * (2 * columnCount + 1))) / 2;
 		hexagons = new Hexagon[rows][colums];
@@ -39,9 +43,17 @@ public class HexMap implements Constants {
 				hexagons[i][j] = new Hexagon(main, i, j);
 			}
 		}
-		wayColumn = hexagons[FIRST_ROW + 2][columnCount / 2]
-				.createWay(null, random);
-		hexagons[FIRST_ROW + 2][columnCount / 2].connectMid();
+		// Activate start hexagon
+		wayColumn = hexagons[startRow][startColumn].createWay(null, random);
+		hexagons[startRow][startColumn].connectMid();
+	}
+
+	public int getStartRow() {
+		return startRow;
+	}
+
+	public int getStartColumn() {
+		return startColumn;
 	}
 
 	/**
@@ -191,6 +203,6 @@ public class HexMap implements Constants {
 
 	public double getFluxInc(int row) {
 		return BASE_FLUX_SPEED * Math.pow(LEVEL_FLUX_SPEED, main.getLevel())
-				* (1 - (float) (row-FIRST_ROW) / VISIBLE_ROWS);
+				* (1 - (float) (row - FIRST_ROW) / VISIBLE_ROWS);
 	}
 }

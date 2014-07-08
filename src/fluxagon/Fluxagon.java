@@ -56,6 +56,7 @@ public class Fluxagon implements Constants {
 	private boolean isOver;
 	/** Boolean flag on whether circles or hexagons are drawn */
 	private boolean circleMode = false;
+	private boolean showCredits;
 	/** aktuelles Level */
 	private int level = 1;
 	/** Color theme fading */
@@ -69,6 +70,7 @@ public class Fluxagon implements Constants {
 	/** GUI */
 	private HexMenu menuMain;
 	private HexMenu menuOptions;
+	private HexMenu menuReplay;
 	/** Textures */
 	private Texture texEmpty;
 	private Texture texPlay;
@@ -77,24 +79,28 @@ public class Fluxagon implements Constants {
 	private Texture texQuit;
 	private Texture texFlxgn;
 	private Texture texUnmute;
-	private boolean showCredits;
 	private Texture texResolution;
 	private Texture texResSmall;
 	private Texture texResMiddle;
 	private Texture texResBig;
-	private HexMenu menuReplay;
+	private Texture texLoading;
+	private Cursor cursorHand;
+	/** load Animation */
 	private boolean loadFaderActive = true;
 	private long loadFadeTime;
 	private boolean loadTimeElapsed = false;
 	private long loadTime;
-	private Texture texLoading;
-	private Cursor cursorHand;
+	/** Window preferences */
 	private int realWindowWidth = Display.getDesktopDisplayMode().getWidth();
 	private int realWindowHeight;
 	private float aspectRatio;
 	private boolean fullscreen = true;
-	/** Display <li>0: small windowed<li>1:medium windowed<li>2:fullscreen */
+	/** Display <li>0: small windowed<li>1: medium windowed<li>2: fullscreen */
 	private byte displaySetting = 1;
+	/** Highscore name input? */
+	private boolean waitingForInput = false;
+	/** Highscore name */
+	private String bestPlayer = "";
 
 	public int getWindowWidth() {
 		return windowWidth;
@@ -531,6 +537,7 @@ public class Fluxagon implements Constants {
 				if (menuOptions.isVisible()) {
 					menuOptions.setVisible(false);
 				}
+				waitingForInput = false; // not necessary?
 			}
 
 			@Override
@@ -546,6 +553,7 @@ public class Fluxagon implements Constants {
 				} else {
 					menuOptions.setVisible(true);
 				}
+				waitingForInput = false; // not necessary?
 			}
 
 			@Override
@@ -626,13 +634,14 @@ public class Fluxagon implements Constants {
 		});
 
 		// Replay menu
-		menuReplay = new HexMenu(2 * windowWidth / 3, windowHeight / 2, false);
+		menuReplay = new HexMenu(windowWidth / 2 + 180, windowHeight / 2, false);
 		menuReplay.setSize(50);
 		menuReplay.add(new HexMenuItem(0, 0, texReset) {
 			@Override
 			public void click() {
 				initGame();
 				menuReplay.setVisible(false);
+				waitingForInput = false;
 			}
 		});
 	}
@@ -643,8 +652,17 @@ public class Fluxagon implements Constants {
 			FileOutputStream fileOut = new FileOutputStream("settings.svd");
 			ObjectOutputStream out = new ObjectOutputStream(fileOut);
 			out.writeByte(displaySetting);
-			out.writeDouble(highscore);
 			out.writeBoolean(SoundPlayer.isMuted());
+			System.out.println("-- Saved");
+			System.out.print("Highscore ");
+			out.writeDouble(highscore);
+			for (int i = 0; i < NAME_LENGTH; i++) {
+				if (i < bestPlayer.length()) {
+					out.writeChar(bestPlayer.charAt(i));
+				} else {
+					out.writeChar(0);
+				}
+			}
 			out.close();
 			fileOut.close();
 			System.out.println("-- Saved");
@@ -659,9 +677,23 @@ public class Fluxagon implements Constants {
 			FileInputStream fileIn = new FileInputStream("settings.svd");
 			ObjectInputStream in = new ObjectInputStream(fileIn);
 			displaySetting = in.readByte();
-			highscore = in.readDouble();
 			if (in.readBoolean()) {
 				SoundPlayer.toggleMute();
+			}
+			System.out.println("-- Loaded");
+			System.out.print("Highscore ");
+			highscore = in.readDouble();
+			if (highscore < 0) {
+				highscore = 0;
+			}
+			bestPlayer = "";
+			for (int i = 0; i < NAME_LENGTH; i++) {
+				char c = in.readChar();
+				if (c == 0) {
+					break;
+				} else {
+					bestPlayer += c;
+				}
 			}
 			in.close();
 			fileIn.close();
@@ -706,7 +738,33 @@ public class Fluxagon implements Constants {
 	private void processKeyboard() {
 		while (Keyboard.next()) {
 			if (Keyboard.getEventKeyState()) {
-				if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
+				// Highscore name input
+				if (waitingForInput) {
+					if (Keyboard.getEventKey() == Keyboard.KEY_RETURN) {
+						waitingForInput = false;
+						saveSettings();
+					} else if (Keyboard.getEventKey() == Keyboard.KEY_BACK) {
+						if (bestPlayer.length() > 0) {
+							bestPlayer = bestPlayer.substring(0, bestPlayer.length() - 1);
+						}
+					} else if (bestPlayer.length() < NAME_LENGTH) {
+						char c = Keyboard.getEventCharacter();
+						// Eingabebeschränkung
+						if (c >= 65 && c <= 90 // A - Z
+								|| c >= 97 && c <= 122 // a - z
+								|| c >= 48 && c <= 57 // 0 - 9
+								|| c == 223 // ß
+								|| c == 228 || c == 246 || c == 252 // ä ö ü
+								|| c == 196 || c == 214 || c == 220 // Ä Ö Ü
+								|| (!(bestPlayer.length() == 0)
+								&& !bestPlayer.endsWith(" ") && !bestPlayer.endsWith("-")
+								&& (c == 32 || c == 45) // leer -
+								)) {
+							bestPlayer += c;
+						}
+					}
+					// Normal interaction
+				} else if (Keyboard.getEventKey() == Keyboard.KEY_ESCAPE) {
 					if (menuOptions.isVisible()) {
 						menuOptions.setVisible(false);
 					} else if (menuMain.isVisible()) {
@@ -817,6 +875,8 @@ public class Fluxagon implements Constants {
 						menuReplay.setVisible(true);
 						if (score > highscore) {
 							highscore = score;
+							waitingForInput = true;
+							bestPlayer = "";
 							saveSettings();
 						}
 					}
@@ -872,8 +932,9 @@ public class Fluxagon implements Constants {
 		// level
 		Renderer.drawText(9, 25 + 9, "Level: " + level);
 		// highscore
-		if (isOver) {
-			Renderer.drawText(9, 50 + 9, "Highscore: " + (int) highscore);
+		if (highscore != 0 && (isOver || isMenuOpen())) {
+			Renderer.drawText(9, 50 + 9, "Highscore: " + (int) highscore
+					+ (bestPlayer.length() > 0 ? " - " + bestPlayer : ""));
 		}
 
 		// score popups
@@ -881,7 +942,7 @@ public class Fluxagon implements Constants {
 			TextPopup.renderAll();
 		}
 
-		// game over and pause messages
+		// game over message
 		glPushMatrix();
 		if (!isMenuOpen()) {
 			if (isOver) {
@@ -889,18 +950,20 @@ public class Fluxagon implements Constants {
 				glColor4d(0, 0, 0, 0.75);
 				Renderer.drawQuad(windowWidth, 60);
 				glTranslatef(0, -windowHeight / 2 + 30, 0);
-				Renderer.drawText(windowWidth / 2, windowHeight / 2,
-						"Game over :/", 0.5f, 0.5f);
+				if (waitingForInput) {
+					Renderer.drawText(windowWidth / 2, windowHeight / 2 - 15,
+							"Game over :/", 0.5f, 0.5f);
+					Renderer.drawText(windowWidth / 2, windowHeight / 2 + 15,
+							"Enter name: " + bestPlayer
+							+ (bestPlayer.length() < NAME_LENGTH ? "_" : ""),
+							0.5f, 0.5f);
+				} else {
+					Renderer.drawText(windowWidth / 2, windowHeight / 2,
+							"Game over :/", 0.5f, 0.5f);
+				}
 			}
 		}
 		glPopMatrix();
-
-		// creator
-		if (showCredits) {
-			Renderer.drawText(windowWidth / 2, windowHeight - 9,
-					"Created by Benjamin Strilziw && Timo Gebauer",
-					0.5f, 1);
-		}
 
 		menuMain.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
 		menuOptions.setHexColor(COLOR_HEXAGON[getHexColorIndex()]);
@@ -933,6 +996,13 @@ public class Fluxagon implements Constants {
 			if (menuMain.render(getMouseX(), getMouseY())) {
 				cursor = cursorHand;
 			}
+		}
+
+		// Creator credits
+		if (showCredits) {
+			Renderer.drawText(windowWidth / 2, windowHeight - 9,
+					"Created by Benjamin Strilziw && Timo Gebauer",
+					0.5f, 1);
 		}
 
 		if (Mouse.getNativeCursor() != cursor) {

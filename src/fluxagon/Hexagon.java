@@ -159,7 +159,7 @@ public class Hexagon implements Constants {
 		createLane(side);
 		// Verdrehen
 		// solange es nicht um das Start-Hexagon geht
-		if (!(row == ROW_COUNT / 4 && column == COLUMN_COUNT / 2)) {
+		if (!(row == main.getMap().getStartRow() && column == main.getMap().getStartColumn())) {
 			rotation += random.nextInt(6) * 60;
 			goalRotation = rotation;
 		}
@@ -262,7 +262,7 @@ public class Hexagon implements Constants {
 		}
 
 		// Falls es sich um das Start-Hexagon handelt
-		if (row == FIRST_ROW + 2 && column == COLUMN_COUNT / 2) {
+		if (row == main.getMap().getStartRow() && column == main.getMap().getStartColumn()) {
 			if (main.isWaitingToStart() && !main.isGamePaused()) {
 				double t = main.getTimeUntilStart() % 1000;
 				brightness = 0.5 + 0.8 * t / 1000;

@@ -23,15 +23,15 @@ public interface Constants {
 	/** erste sichtbare Reihe */
 	public static final int FIRST_ROW = 10;
 	/** Wahrscheinlichkeit für das Entstehen einer Lane */
-	public static final float LANE_PROBABILITY = 0.4f;
+	public static final float LANE_PROBABILITY = 0.38f;
 	/** Drehweite der Hexagone pro Animationsdurchlauf */
 	public static final float HEX_ROTATION_DIST = 15;
 	/** Flussgeschwindigkeit */
-	public static final double BASE_FLUX_SPEED = 0.04;
-	public static final double LEVEL_FLUX_SPEED = 1.044;
+	public static final double BASE_FLUX_SPEED = 0.05;
+	public static final double LEVEL_FLUX_SPEED = 1.05;
 	/** Scrollgeschwindigkeit der Map */
-	public static final double BASE_SCROLL_SPEED = 0.011;
-	public static final double LEVEL_SCROLL_SPEED = 1.04;
+	public static final double BASE_SCROLL_SPEED = 0.015;
+	public static final double LEVEL_SCROLL_SPEED = 1.05;
 	/** Farbdefinitionen für die Hexagone */
 	public static final GlColor[] COLOR_HEXAGON = {
 		/* 0 orange */new GlColor(1, 0.6, 0.1),
@@ -74,4 +74,5 @@ public interface Constants {
 	};
 	public static final int FONT_STANDARD = 0;
 	public static final int FONT_POPUP = 1;
+	public static final int NAME_LENGTH = 12;
 }
