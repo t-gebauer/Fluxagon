@@ -1,14 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import java.util.Random;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class HexMap implements Constants {
 
@@ -16,10 +12,10 @@ public class HexMap implements Constants {
 	/** Boolean flag on whether odd or even Lanes are indented */
 	private boolean indentOdd = false;
 	private Hexagon[][] hexagons;
-	private Fluxagon main;
+	private final Fluxagon main;
 	/** X-Position des Weges (in der letzten Zeile) */
 	private int wayColumn;
-	private Random random = new Random();
+	private final Random random = new Random();
 	private int rowCount, columnCount;
 	private float hexOffsetX;
 	/** Position of the start-hexagon */
@@ -166,10 +162,10 @@ public class HexMap implements Constants {
 	 * Update der Spiel-Mechanik
 	 */
 	public void update() {
-		for (int i = 0; i < hexagons.length; i++) {
-			for (int j = 0; j < hexagons[i].length; j++) {
-				if (hexagons[i][j] != null) {
-					hexagons[i][j].update();
+		for (Hexagon[] hexagonArr : hexagons) {
+			for (Hexagon hexagon : hexagonArr) {
+				if (hexagon != null) {
+					hexagon.update();
 				}
 			}
 		}
@@ -179,10 +175,10 @@ public class HexMap implements Constants {
 	 * Update der Animations-Mechanik
 	 */
 	public void animate() {
-		for (int i = 0; i < hexagons.length; i++) {
-			for (int j = 0; j < hexagons[i].length; j++) {
-				if (hexagons[i][j] != null) {
-					hexagons[i][j].animate();
+		for (Hexagon[] hexagonArr : hexagons) {
+			for (Hexagon hexagon : hexagonArr) {
+				if (hexagon != null) {
+					hexagon.animate();
 				}
 			}
 		}
@@ -192,10 +188,10 @@ public class HexMap implements Constants {
 	 * Grafische Ausgabe
 	 */
 	public void render() {
-		for (int i = 0; i < hexagons.length; i++) {
-			for (int j = 0; j < hexagons[i].length; j++) {
-				if (hexagons[i][j] != null) {
-					hexagons[i][j].render();
+		for (Hexagon[] hexagonArr : hexagons) {
+			for (Hexagon hexagon : hexagonArr) {
+				if (hexagon != null) {
+					hexagon.render();
 				}
 			}
 		}

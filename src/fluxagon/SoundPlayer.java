@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import java.nio.FloatBuffer;
@@ -15,7 +11,7 @@ import org.lwjgl.util.WaveData;
 /**
  * Zur Wiedergabe von Sounds
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class SoundPlayer {
 
@@ -24,24 +20,24 @@ public class SoundPlayer {
 	/** Sources are points emitting sound. */
 	private static IntBuffer source;
 	/** Position of the source sound. */
-	private static FloatBuffer sourcePos =
+	private static final FloatBuffer sourcePos =
 			(FloatBuffer) BufferUtils.createFloatBuffer(3).
 			put(new float[]{0.0f, 0.0f, 0.0f}).rewind();
 	/** Velocity of the source sound. */
-	private static FloatBuffer sourceVel =
+	private static final FloatBuffer sourceVel =
 			(FloatBuffer) BufferUtils.createFloatBuffer(3).
 			put(new float[]{0.0f, 0.0f, 0.0f}).rewind();
 	/** Position of the listener. */
-	private static FloatBuffer listenerPos =
+	private static final FloatBuffer listenerPos =
 			(FloatBuffer) BufferUtils.createFloatBuffer(3).
 			put(new float[]{0.0f, 0.0f, 0.0f}).rewind();
 	/** Velocity of the listener. */
-	private static FloatBuffer listenerVel =
+	private static final FloatBuffer listenerVel =
 			(FloatBuffer) BufferUtils.createFloatBuffer(3).
 			put(new float[]{0.0f, 0.0f, 0.0f}).rewind();
 	/** Orientation of the listener. (first 3 elements are "at", second 3 are
 	 * "up") */
-	private static FloatBuffer listenerOri =
+	private static final FloatBuffer listenerOri =
 			(FloatBuffer) BufferUtils.createFloatBuffer(6).
 			put(new float[]{0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 0.0f}).rewind();
 	private static boolean muted = false;
@@ -51,7 +47,7 @@ public class SoundPlayer {
 	}
 
 	public static void toggleMute() {
-		muted = muted ? false : true;
+		muted = !muted;
 	}
 
 	public static void init(String[] files) {
@@ -60,7 +56,8 @@ public class SoundPlayer {
 			try {
 				AL.create();
 			} catch (LWJGLException e) {
-				e.printStackTrace();
+				System.err.println("ERROR: Failed to initialise Sound Player");
+				System.err.println(e);
 				return;
 			}
 		}

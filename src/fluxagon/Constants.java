@@ -1,14 +1,10 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import java.awt.Font;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public interface Constants {
 

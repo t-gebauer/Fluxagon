@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package hexmenu;
 
 import fluxagon.GlColor;
@@ -11,7 +7,7 @@ import org.newdawn.slick.opengl.Texture;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class HexMenuItem {
 
@@ -23,7 +19,7 @@ public class HexMenuItem {
 	private float x, y;
 	private Texture texture;
 	private boolean drawBackground = true;
-	private int rotation, goalRotation, clickCount;
+	private int rotation, goalRotation;
 
 	public HexMenuItem(float x, float y, Texture texture) {
 		this.x = x;

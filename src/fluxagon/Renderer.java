@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import java.awt.Font;
@@ -12,7 +8,7 @@ import org.newdawn.slick.opengl.Texture;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class Renderer {
 
@@ -21,7 +17,7 @@ public class Renderer {
 	private static int fontIndex = 0;
 	private static Color fontColor = Color.white;
 	/** Boolean flag on whether AntiAliasing is enabled or not */
-	private static boolean antiAlias = true;
+	private static final boolean antiAlias = true;
 	/** background Color */
 	private static GlColor backgroundColor = new GlColor(0.3, 0.3, 0.3, 0.5);
 
@@ -133,9 +129,12 @@ public class Renderer {
 		if (height < 0) {
 			height = tex.getImageHeight();
 		}
+		
 		tex.bind();
+		
 		float right = tex.getImageWidth() / (float) tex.getTextureWidth();
 		float bottom = tex.getImageHeight() / (float) tex.getTextureHeight();
+		
 		glBegin(GL_QUADS);
 		glTexCoord2f(0, 0);
 		glVertex2f(0, 0);

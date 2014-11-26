@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import java.util.Random;
@@ -9,7 +5,7 @@ import static org.lwjgl.opengl.GL11.*;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class Hexagon implements Constants {
 
@@ -106,6 +102,7 @@ public class Hexagon implements Constants {
 	 * <li>3: rechts-oben
 	 * <li>4: rechts-mitte
 	 * <li>5: rechts-unten
+	 * </ul>
 	 */
 	public void connectLane(int num) {
 		num = (num - Math.round(goalRotation / 60)) % 6;
@@ -281,7 +278,7 @@ public class Hexagon implements Constants {
 		COLOR_HEXAGON[main.getHexColorIndex()].
 				mult(main.getFadePercent()).
 				add(COLOR_HEXAGON[main.getOldHexColorIndex()].
-				mult(1 - main.getFadePercent())).
+						mult(1 - main.getFadePercent())).
 				mult(brightness).bind();
 
 		// draw rotating hexagons in the background
@@ -388,7 +385,7 @@ public class Hexagon implements Constants {
 		// gefüllte Linien
 		COLOR_LINE_FG[main.getHexColorIndex()].mult(main.getFadePercent()).
 				add(COLOR_LINE_FG[main.getOldHexColorIndex()].
-				mult(1 - main.getFadePercent())).bind();
+						mult(1 - main.getFadePercent())).bind();
 		if (pc1 > 0) {
 			// Linie von innen nach außen
 			drawPercentLine(x, y, dx, dy, pc1);

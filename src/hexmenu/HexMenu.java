@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package hexmenu;
 
 import fluxagon.GlColor;
@@ -10,7 +6,7 @@ import org.lwjgl.opengl.GL11;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class HexMenu {
 

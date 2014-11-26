@@ -1,7 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package fluxagon;
 
 import hexmenu.HexMenu;
@@ -32,7 +28,7 @@ import org.newdawn.slick.util.ResourceLoader;
 
 /**
  *
- * @author Timo
+ * @author Timo Gebauer
  */
 public class Fluxagon implements Constants {
 
@@ -95,7 +91,11 @@ public class Fluxagon implements Constants {
 	private int realWindowHeight;
 	private float aspectRatio;
 	private boolean fullscreen = true;
-	/** Display <li>0: small windowed<li>1: medium windowed<li>2: fullscreen */
+	/** Display <ul>
+	 * <li>0: small windowed
+	 * <li>1: medium windowed
+	 * <li>2: fullscreen
+	 * </ul> */
 	private byte displaySetting = 1;
 	/** Highscore name input? */
 	private boolean waitingForInput = false;
@@ -168,7 +168,6 @@ public class Fluxagon implements Constants {
 	}
 
 	/**
-	 *
 	 * @return if startup time is not over
 	 */
 	public boolean isWaitingToStart() {
@@ -245,8 +244,8 @@ public class Fluxagon implements Constants {
 	 */
 	public static void main(String[] args) {
 		// Library Path
-		System.setProperty(
-				"org.lwjgl.librarypath", new File("native/windows").getAbsolutePath());
+		System.setProperty("org.lwjgl.librarypath",
+				new File("native/windows").getAbsolutePath());
 
 		Fluxagon flux = new Fluxagon();
 
@@ -320,7 +319,7 @@ public class Fluxagon implements Constants {
 		glDepthMask(true);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
+		
 		// Antialiasing
 		glEnable(GL_LINE_SMOOTH);
 		glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
@@ -356,13 +355,11 @@ public class Fluxagon implements Constants {
 				DisplayMode[] modes = Display.getAvailableDisplayModes();
 				int freq = 0;
 
-				for (int i = 0; i < modes.length; i++) {
-					DisplayMode current = modes[i];
-
-					if ((current.getWidth() == width) && (current.getHeight() == height)) {
-						if ((targetDisplayMode == null) || (current.getFrequency() >= freq)) {
-							if ((targetDisplayMode == null) || (current.getBitsPerPixel() > targetDisplayMode.getBitsPerPixel())) {
-								targetDisplayMode = current;
+				for (DisplayMode mode : modes) {
+					if ((mode.getWidth() == width) && (mode.getHeight() == height)) {
+						if ((targetDisplayMode == null) || (mode.getFrequency() >= freq)) {
+							if ((targetDisplayMode == null) || (mode.getBitsPerPixel() > targetDisplayMode.getBitsPerPixel())) {
+								targetDisplayMode = mode;
 								freq = targetDisplayMode.getFrequency();
 							}
 						}
@@ -370,9 +367,9 @@ public class Fluxagon implements Constants {
 						// if we've found a match for bpp and frequence against the 
 						// original display mode then it's probably best to go for this one
 						// since it's most likely compatible with the monitor
-						if ((current.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel())
-								&& (current.getFrequency() == Display.getDesktopDisplayMode().getFrequency())) {
-							targetDisplayMode = current;
+						if ((mode.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel())
+								&& (mode.getFrequency() == Display.getDesktopDisplayMode().getFrequency())) {
+							targetDisplayMode = mode;
 							break;
 						}
 					}
@@ -390,7 +387,6 @@ public class Fluxagon implements Constants {
 			System.setProperty("org.lwjgl.opengl.Window.undecorated", "" + fullscreen);
 			Display.setDisplayMode(targetDisplayMode);
 			Display.setFullscreen(fullscreen);
-
 
 		} catch (LWJGLException e) {
 			System.out.println("Unable to setup mode " + width + "x" + height + " fullscreen=" + fullscreen + e);
@@ -507,7 +503,7 @@ public class Fluxagon implements Constants {
 		menuMain.add(new HexMenuItem(-1, 0, null) {
 			@Override
 			public void click() {
-				showCredits = showCredits ? false : true;
+				showCredits = !showCredits;
 			}
 
 			@Override
@@ -574,22 +570,22 @@ public class Fluxagon implements Constants {
 		});
 		menuMain.add(new HexMenuItem(-0.5f, 0.75f,
 				(SoundPlayer.isMuted() ? texMute : texUnmute)) {
-			@Override
-			public void click() {
-				SoundPlayer.toggleMute();
-				if (SoundPlayer.isMuted()) {
-					setTexture(texMute);
-				} else {
-					setTexture(texUnmute);
-				}
-				saveSettings();
-			}
+					@Override
+					public void click() {
+						SoundPlayer.toggleMute();
+						if (SoundPlayer.isMuted()) {
+							setTexture(texMute);
+						} else {
+							setTexture(texUnmute);
+						}
+						saveSettings();
+					}
 
-			@Override
-			public void mouseOver() {
-				Renderer.drawText(tooltipWidth, tooltipHeight, SoundPlayer.isMuted() ? "Unmute" : "Mute", 0.5f, 0);
-			}
-		});
+					@Override
+					public void mouseOver() {
+						Renderer.drawText(tooltipWidth, tooltipHeight, SoundPlayer.isMuted() ? "Unmute" : "Mute", 0.5f, 0);
+					}
+				});
 		// Options menu
 		menuOptions = new HexMenu(windowWidth / 2, windowHeight / 2, false);
 		menuOptions.setSize(windowHeight / 6);
@@ -773,11 +769,11 @@ public class Fluxagon implements Constants {
 						menuMain.setVisible(true);
 					}
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_P) {
-					capFPS = capFPS ? false : true;
+					capFPS = !capFPS;
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_R) {
 					initGame();
 				} else if (Keyboard.getEventKey() == Keyboard.KEY_C) {
-					circleMode = circleMode ? false : true;
+					circleMode = !circleMode;
 				}
 			} else {
 				// Key Release
@@ -1026,7 +1022,7 @@ public class Fluxagon implements Constants {
 		try {
 			Mouse.setNativeCursor(cursor);
 		} catch (LWJGLException e) {
-			System.out.println("ERROR: Failed to set native cursor.");
+			System.err.println("ERROR: Failed to set native cursor.");
 		}
 	}
 
