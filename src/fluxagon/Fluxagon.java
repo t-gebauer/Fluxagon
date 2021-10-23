@@ -391,7 +391,7 @@ public class Fluxagon implements Constants {
 
 	private BufferedImage loadImage(String filename) {
 		try {
-			return ImageIO.read(new File(filename));
+			return ImageIO.read(Fluxagon.class.getResource("/" + filename));
 		} catch (IOException e) {
 			System.err.println("Can't load file: " + filename);
 		}

@@ -10,17 +10,25 @@ Enstanden im Kurs Mediengestaltung 1 im Studiengang Media Systems an der Hochsch
 ![Fluxagon Menu](screenshots/menu.png?raw=true "Fluxagon Menu")
 ![Fluxagon Game](screenshots/game.png?raw=true "Fluxagon Game")
 
+## Dependencies
 
-## Native Dependencies
-
+- Java 8 (jre-1.8) (https://www.java.com/en/download/manual.jsp)
 - LWJGL 2.x.x (http://legacy.lwjgl.org/download.php.html)
+
+### Linux
 
 Unter Linux wird zusätzlich noch `libXxf86vm` benötigt und eventuell eine neuere
 Version von `libopenal` (siehe `shell.nix`).
 
-Unter Linux müssen die Dependencies unter `$LD_LIBRARY_PATH` vorhanden sein.
+Die Libraries müssen unter `$LD_LIBRARY_PATH` zu finden sein.
 
-Auf Windows Systemen muss möglicherweise der Pfad zu den nativen LWJGL Libraries (`lwjgl/native/windows/`) als Java System Property über `java -Dorg.lwjgl.librarypath="..." -jar Fluxagon.jar` angegeben werden.
+### Windows
+
+Auf Windows Systemen muss der Pfad zu den nativen LWJGL Libraries (`lwjgl/native/windows/`) als Java System Property über `-Dorg.lwjgl.librarypath="..."` angegeben werden.
+
+`java -Dorg.lwjgl.librarypath="..." -jar Fluxagon.jar`
+
+Alternativ können alle `.dll` Dateien in den gleichen Ordner wie die `.jar` Datei kopiert werden.
 
 ## Development
 
