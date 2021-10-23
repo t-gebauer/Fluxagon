@@ -4,9 +4,12 @@ Dies ist der Prototyp eines kleinen 2D Puzzle-Action Games. Erstellt mit der Lig
 
 Enstanden im Kurs Mediengestaltung 1 im Studiengang Media Systems an der Hochschule für Angewandte Wissenschaften Hamburg im Sommersemester 2014.
 
-## Menu Grafiken
+## Screenshots
 
-Ich habe keine Ahnung wo die originalen Grafiken (Icons und Bilder) sind. Daher habe ich ein Platzhalter Bild erstellt, damit die Anwendung zumindest läuft bis ich sie wiederfinde.
+![Fluxagon Launcher](screenshots/launcher.png?raw=true "Fluxagon Launcher")
+![Fluxagon Menu](screenshots/menu.png?raw=true "Fluxagon Menu")
+![Fluxagon Game](screenshots/game.png?raw=true "Fluxagon Game")
+
 
 ## Native Dependencies
 
@@ -24,11 +27,10 @@ Auf Windows Systemen muss möglicherweise der Pfad zu den nativen LWJGL Librarie
 This project can be build with Bazel (https://docs.bazel.build/).
 
 **Building:**  
-    `bazel build`
+    `bazel build`  
 
 **Running:**  
     `bazel run`  
-    (alternatively `bazel-bin/Fluxagon`)  
 
 **Deploying (Fat JAR):**  
     `bazel build //:Fluxagon_deploy.jar`  
