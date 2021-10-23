@@ -243,10 +243,6 @@ public class Fluxagon implements Constants {
 	 * @param args the command line arguments
 	 */
 	public static void main(String[] args) {
-		// Library Path
-		System.setProperty("org.lwjgl.librarypath",
-				new File("native/windows").getAbsolutePath());
-
 		Fluxagon flux = new Fluxagon();
 
 		flux.init();
@@ -319,7 +315,7 @@ public class Fluxagon implements Constants {
 		glDepthMask(true);
 
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		
+
 		// Antialiasing
 		glEnable(GL_LINE_SMOOTH);
 		glHint(GL_LINE_SMOOTH_HINT, GL_DONT_CARE);
@@ -364,7 +360,7 @@ public class Fluxagon implements Constants {
 							}
 						}
 
-						// if we've found a match for bpp and frequence against the 
+						// if we've found a match for bpp and frequence against the
 						// original display mode then it's probably best to go for this one
 						// since it's most likely compatible with the monitor
 						if ((mode.getBitsPerPixel() == Display.getDesktopDisplayMode().getBitsPerPixel())
